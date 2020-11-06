@@ -12,11 +12,30 @@ $flow-view-box-shadow: 0 0 7px 1px !default;
 $flow-view-box-shadow-color: rgba($flow-view-color-black, 0.1) !default;
 $flow-view-border-radius: 1px !default;
 
+$flow-view-node-barsize: 10px !default;
+
 .flow-view-node {
   background-color: $flow-view-background-color;
   border-radius: $flow-view-border-radius;
   box-shadow: $flow-view-box-shadow $flow-view-box-shadow-color;
   display: flex;
+  flex-direction: column;
   font-family: $flow-view-font-family;
+  overflow: hidden;
   position: absolute;
+
+  &__headbar {
+    background-color: $flow-view-color-neutral;
+    height: $flow-view-node-barsize;
+  }
+
+  &__body {
+    flex: 1;
+    position: relative;
+  }
+
+  &__footbar {
+    background-color: $flow-view-color-neutral;
+    height: $flow-view-node-barsize;
+  }
 }
