@@ -1,22 +1,22 @@
 $flow-view-font-family: sans-serif !default;
-$flow-view-font-family-mono: Courier !default;
+$flow-view-font-family-mono: courier !default;
 
-$flow-view-color-white: white !default;
-$flow-view-color-black: #111111 !default;
-$flow-view-color-neutral: gainsboro !default;
+$flow-view-color-white: #fefefe !default;
+$flow-view-color-black: #011001 !default;
+$flow-view-color-neutral: #dedede !default;
 
 $flow-view-background-color: $flow-view-color-white !default;
 $flow-view-text-color: $flow-view-color-black !default;
 
-$flow-view-box-shadow: 0px 0px 7px 1px !default;
+$flow-view-box-shadow: 0 0 7px 1px !default;
 $flow-view-box-shadow-color: rgba($flow-view-color-black, 0.1) !default;
 $flow-view-border-radius: 1px !default;
 
 .flow-view-node {
-  position: absolute;
+  background-color: $flow-view-background-color;
+  border-radius: $flow-view-border-radius;
+  box-shadow: $flow-view-box-shadow $flow-view-box-shadow-color;
   display: flex;
   font-family: $flow-view-font-family;
-  background-color: $flow-view-background-color;
-  box-shadow: $flow-view-box-shadow $flow-view-box-shadow-color;
-  border-radius: $flow-view-border-radius;
+  position: absolute;
 }

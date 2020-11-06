@@ -1,5 +1,15 @@
-$font-family: -apple-system, 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-$font-family-monospace: 'source-code-pro', 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
+$font-size: 17px;
+$font-family: -apple-system, 'BlinkMacSystemFont', 'Segoe UI', 'Roboto',
+  'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  sans-serif;
+$font-family-monospace: 'source-code-pro', 'Menlo', 'Monaco', 'Consolas',
+  'Courier New', monospace;
+
+$color-black: #010101;
+$color-white: #fefefe;
+
+$flow-view-color-black: $color-black;
+$flow-view-color-white: $color-white;
 
 $flow-view-font-family: $font-family;
 $flow-view-font-family-mono: $font-family-monospace;

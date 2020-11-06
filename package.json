@@ -14,13 +14,15 @@
     "react-dom": "^17.0.1",
     "react-markdown": "^5.0.2",
     "react-scripts": "4.0.0",
+    "react-spring": "^8.0.27",
     "react-three-fiber": "^5.1.4",
     "remark-gfm": "^1.0.0",
     "stylelint": "^13.7.2",
     "stylelint-config-sass-guidelines": "^7.1.0",
     "stylelint-config-standard": "^20.0.0",
     "three": "^0.122.0",
-    "typescript": "^4.0.5"
+    "typescript": "^4.0.5",
+    "use-resize-observer": "^6.1.0"
   },
   "scripts": {
     "build": "react-scripts build",
@@ -29,6 +31,7 @@
     "lint-staged": "lint-staged",
     "start": "react-scripts start",
     "tsc": "tsc",
+    "test:sass-build": "node-sass src/sass/index.scss > /dev/null",
     "test": "react-scripts test --watchAll=false"
   },
   "browserslist": {
@@ -60,18 +63,21 @@
     }
   },
   "lint-staged": {
-    "**/*.{ts,tsx}": [
+    "**/*.{js,jsx}": [
+      "eslint --fix",
       "prettier --write",
-      "eslint --fix-dry-run"
+      "git add"
     ],
-    "**/*.{scss}": [
+    "**/*.scss": [
+      "stylelint --fix",
       "prettier --write",
-      "stylelint"
+      "git add"
     ],
     "*.{json,md}": "prettier --write"
   },
   "pre-commit": [
-    "lint-staged"
+    "lint-staged",
+    "test:sass-build"
   ],
   "prettier": {
     "arrowParens": "always",
@@ -85,9 +91,6 @@
     "extends": [
       "stylelint-config-standard",
       "stylelint-config-sass-guidelines"
-    ],
-    "rules": {
-      "order/properties-alphabetical-order": null
-    }
+    ]
   }
 }

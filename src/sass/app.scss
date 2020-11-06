@@ -1,11 +1,31 @@
+html,
+body {
+  height: 100%;
+}
+
 body {
   font-family: $font-family;
-  margin: 0;
-
+  font-size: $font-size;
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
+  margin: 0;
 }
 
 code {
   font-family: $font-family-monospace;
+}
+
+.app {
+  color: $color-black;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+
+  &__nav {
+    background-color: $color-white;
+  }
+
+  &__body {
+    position: relative;
+  }
 }
