@@ -1,13 +1,4 @@
 @import 'variables';
 
-body {
-  font-family: $font-family;
-  margin: 0;
-
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-font-smoothing: antialiased;
-}
-
-code {
-  font-family: $font-family-monospace;
-}
+@import 'flow-view';
+@import 'app';

@@ -1,0 +1,10 @@
+$flow-view-font-family: sans-serif !default;
+$flow-view-font-family-mono: Courier !default;
+
+$flow-view-color-black: #111111 !default;
+$flow-view-color-neutral: gainsboro !default;
+
+.flow-view-box {
+  display: flex;
+  font-family: $flow-view-font-family;
+}
