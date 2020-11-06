@@ -1,5 +1,7 @@
+import { DflowGraph } from './components/DflowGraph'
+
 export function App() {
   return (
-    <div />
+    <DflowGraph />
   );
 }
