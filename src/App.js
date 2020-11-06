@@ -1,5 +1,3 @@
-import { useState } from 'react'
-import { useSpring } from 'react-spring'
 import useResizeObserver from 'use-resize-observer'
 
 import { DflowGraph } from './components/DflowGraph'
