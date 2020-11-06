@@ -24,5 +24,3 @@ jobs:
       - name: deploy to S3
         run: aws s3 sync ./build/ s3://dflow.it --delete
 
-      - name: set cache
-        run: aws s3 cp s3://dflow.it/index.html s3://dflow.it/index.html --cache-control 'max-age=300'
