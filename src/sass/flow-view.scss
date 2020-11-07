@@ -1,21 +1,30 @@
 $flow-view-font-family: sans-serif !default;
 $flow-view-font-family-mono: courier !default;
 
-$flow-view-color-white: #fefefe !default;
-$flow-view-color-black: #011001 !default;
-$flow-view-color-neutral: #dedede !default;
+$flow-view-color-white: #fff !default;
+$flow-view-color-black: #111 !default;
+$flow-view-color-neutral: #dcdcdc !default;
+$flow-view-color-selected: #ee82ee !default;
 
 $flow-view-background-color: $flow-view-color-white !default;
 $flow-view-text-color: $flow-view-color-black !default;
 
 $flow-view-box-shadow: 0 0 7px 1px !default;
 $flow-view-box-shadow-color: rgba($flow-view-color-black, 0.1) !default;
-$flow-view-border-radius: 1px !default;
+$flow-view-box-shadow-selected-color: rgba(
+  $flow-view-color-selected,
+  0.5
+) !default;
+$flow-view-border-radius: 2px !default;
+$flow-view-border-width: 1px !default;
+$flow-view-border-color: $flow-view-color-white !default;
+$flow-view-bar-background-color: $flow-view-color-white !default;
 
 $flow-view-node-barsize: 10px !default;
 
 .flow-view-node {
   background-color: $flow-view-background-color;
+  border: $flow-view-border-width solid $flow-view-border-color;
   border-radius: $flow-view-border-radius;
   box-shadow: $flow-view-box-shadow $flow-view-box-shadow-color;
   display: flex;
@@ -25,7 +34,9 @@ $flow-view-node-barsize: 10px !default;
   position: absolute;
 
   &__headbar {
-    background-color: $flow-view-color-neutral;
+    background-color: $flow-view-bar-background-color;
+    border-top-left-radius: $flow-view-border-radius;
+    border-top-right-radius: $flow-view-border-radius;
     height: $flow-view-node-barsize;
   }
 
@@ -35,7 +46,14 @@ $flow-view-node-barsize: 10px !default;
   }
 
   &__footbar {
-    background-color: $flow-view-color-neutral;
+    background-color: $flow-view-bar-background-color;
+    border-bottom-left-radius: $flow-view-border-radius;
+    border-bottom-right-radius: $flow-view-border-radius;
     height: $flow-view-node-barsize;
+  }
+
+  &--selected {
+    border: $flow-view-border-width solid $flow-view-color-selected;
+    box-shadow: $flow-view-box-shadow $flow-view-box-shadow-selected-color;
   }
 }
