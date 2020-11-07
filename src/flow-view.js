@@ -5,16 +5,40 @@ const rootId = 0
 
 const getNodeById = (nodeId) => (state) =>
   state.nodes.find(({ id }) => id === nodeId)
+
 const getChildrenNodes = (id) => (state) =>
-  state.nodes.filter(({ parentId }) => id === parentId)
-const getHasChildrenNodes = (id) => (state) =>
-  id === rootId || getNodeById(id)(state)?.hasChildren === true
-const getNodeIsSelected = (id) => (state) =>
-  getNodeById(id)(state)?.selected === true
-const getNodeHasNoHeadbar = (id) => (state) =>
-  getNodeById(id)(state)?.noHeadbar === true
-const getNodeHasNoFootbar = (id) => (state) =>
-  getNodeById(id)(state)?.noFootbar === true
+  id === rootId
+    ? state.nodes.filter(
+        ({ id: childId, parentId }) =>
+          childId !== rootId &&
+          (parentId === rootId || typeof parentId === 'undefined')
+      )
+    : state.nodes.filter(({ parentId }) => id === parentId)
+
+const getIsContainer = (id) => (state) =>
+  id === rootId || getNodeById(id)(state)?.isContainer === true
+
+const getRenderBody = (id) => (state) => {
+  const node = getNodeById(id)(state)
+
+  const hasRenderBody = typeof node.renderBody === 'function'
+  const isContainer = getIsContainer(id)(state)
+  const childrenNodes = getChildrenNodes(id)(state)
+
+  switch (true) {
+    case hasRenderBody:
+      return node.renderBody
+
+    case isContainer:
+      return (useStore) =>
+        childrenNodes.map((node, i) => (
+          <FlowViewNode key={i} useStore={useStore} {...node} />
+        ))
+
+    default:
+      return () => null
+  }
+}
 
 export const createFlowViewStore = (nodes) =>
   zustand((set, get) => ({
@@ -32,15 +56,13 @@ export const createFlowViewStore = (nodes) =>
   }))
 
 export function FlowViewNode({ id = rootId, parentId = rootId, useStore }) {
-  const { dimension, position } = useStore(getNodeById(id))
-  const hasChildrenNodes = useStore(getHasChildrenNodes(id))
-  const noFootbar = useStore(getNodeHasNoFootbar(id))
-  const noHeadbar = useStore(getNodeHasNoHeadbar(id))
-  const selected = useStore(getNodeIsSelected(id))
+  const { dimension, position, noFootbar, noHeadbar, selected } = useStore(
+    getNodeById(id)
+  )
   const toggleSelection = useStore((state) =>
     state.setSelectedNodes([id], !selected)
   )
-  const childrenNodes = useStore(getChildrenNodes(id))
+  const renderBody = useStore(getRenderBody(id))
 
   return (
     <div
@@ -56,12 +78,7 @@ export function FlowViewNode({ id = rootId, parentId = rootId, useStore }) {
     >
       {noHeadbar || <div className='flow-view-node__headbar' />}
 
-      <div className='flow-view-node__body'>
-        {hasChildrenNodes &&
-          childrenNodes.map(({ id: childId, ...node }, i) => (
-            <FlowViewNode key={i} id={childId} useStore={useStore} {...node} />
-          ))}
-      </div>
+      <div className='flow-view-node__body'>{renderBody(useStore)}</div>
 
       {noFootbar || <div className='flow-view-node__footbar' />}
     </div>

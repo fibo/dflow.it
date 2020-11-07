@@ -11,19 +11,20 @@ export function App() {
   const flowViewStore = createFlowViewStore([
     {
       id: 0,
+      noFootbar: true,
+      noHeadbar: true,
       position: { x: margin, y: 0 },
       dimension: { width: width - margin * 2, height: height - margin },
     },
     {
       id: 1,
-      parentId: 0,
+      renderBody: () => <div>Hello</div>,
       position: { x: 10, y: 10 },
       dimension: { width: 100, height: 100 },
     },
     {
       id: 2,
-      hasChildren: true,
-      parentId: 0,
+      isContainer: true,
       position: { x: 200, y: 10 },
       dimension: { width: 400, height: 400 },
     },
