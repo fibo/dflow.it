@@ -1,5 +1,6 @@
 $flow-view-font-family: sans-serif !default;
 $flow-view-font-family-mono: courier !default;
+$flow-view-font-size: 16px !default;
 
 $flow-view-color-white: #fff !default;
 $flow-view-color-black: #111 !default;
@@ -18,9 +19,12 @@ $flow-view-box-shadow-selected-color: rgba(
 $flow-view-border-radius: 2px !default;
 $flow-view-border-width: 1px !default;
 $flow-view-border-color: $flow-view-color-white !default;
-$flow-view-bar-background-color: $flow-view-color-white !default;
 
-$flow-view-node-barsize: 10px !default;
+$flow-view-node-bar-background-color: $flow-view-color-white !default;
+$flow-view-node-bar-size: 10px !default;
+
+$flow-view-pin-background-color: $flow-view-color-neutral !default;
+$flow-view-pin-size: 10px !default;
 
 .flow-view-node {
   background-color: $flow-view-background-color;
@@ -30,30 +34,59 @@ $flow-view-node-barsize: 10px !default;
   display: flex;
   flex-direction: column;
   font-family: $flow-view-font-family;
+  font-size: $flow-view-font-size;
   overflow: hidden;
   position: absolute;
 
   &__headbar {
-    background-color: $flow-view-bar-background-color;
+    background-color: $flow-view-node-bar-background-color;
     border-top-left-radius: $flow-view-border-radius;
     border-top-right-radius: $flow-view-border-radius;
-    height: $flow-view-node-barsize;
+    display: flex;
+    justify-content: space-between;
+    min-height: $flow-view-node-bar-size;
   }
 
   &__body {
+    display: flex;
     flex: 1;
     position: relative;
   }
 
+  &__label {
+    align-items: center;
+    display: flex;
+    flex: 1;
+    justify-content: center;
+  }
+
+  &__label span {
+    cursor: default;
+    user-select: none;
+  }
+
   &__footbar {
-    background-color: $flow-view-bar-background-color;
+    background-color: $flow-view-node-bar-background-color;
     border-bottom-left-radius: $flow-view-border-radius;
     border-bottom-right-radius: $flow-view-border-radius;
-    height: $flow-view-node-barsize;
+    display: flex;
+    justify-content: space-between;
+    min-height: $flow-view-node-bar-size;
   }
 
   &--selected {
     border: $flow-view-border-width solid $flow-view-color-selected;
     box-shadow: $flow-view-box-shadow $flow-view-box-shadow-selected-color;
   }
+}
+
+.flow-view-pipe {
+  stroke: $flow-view-color-neutral;
+}
+
+.flow-view-pin {
+  background-color: $flow-view-pin-background-color;
+  border-radius: $flow-view-border-radius;
+  height: $flow-view-pin-size;
+  width: $flow-view-pin-size;
 }
