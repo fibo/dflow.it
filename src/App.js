@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import useResizeObserver from 'use-resize-observer'
 
 import { Logo } from './components/Logo'
@@ -11,13 +12,6 @@ export function App() {
   const flowViewStore = createFlowViewStore({
     nodes: [
       {
-        id: 0,
-        noFootbar: true,
-        noHeadbar: true,
-        position: { x: margin, y: 0 },
-        dimension: { width: width - margin * 2, height: height - margin },
-      },
-      {
         id: 1,
         renderBody: () => <div>Hello</div>,
         position: { x: 10, y: 10 },
@@ -30,7 +24,7 @@ export function App() {
         dimension: { width: 400, height: 400 },
       },
       {
-        parentId: 2,
+        containerId: 2,
         id: 3,
         position: { x: 100, y: 10 },
         dimension: { width: 40, height: 40 },
@@ -38,7 +32,7 @@ export function App() {
         outputs: [{ types: ['number'] }],
       },
       {
-        parentId: 2,
+        containerId: 2,
         id: 4,
         position: { x: 100, y: 70 },
         dimension: { width: 40, height: 40 },
@@ -49,19 +43,32 @@ export function App() {
     ],
     pipes: [
       {
-        parentId: 2,
+        containerId: 2,
         id: 5,
         source: [3, 0],
         target: [4, 0],
       },
       {
-        parentId: 2,
+        containerId: 2,
         id: 6,
         source: [3, 0],
         target: [4, 0],
       },
     ],
   })
+
+  const setRootDimension = flowViewStore((state) => state.setRootDimension)
+  const setRootPosition = flowViewStore((state) => state.setRootPosition)
+
+  useEffect(() => {
+    if (typeof width === 'number' && typeof height === 'number') {
+      setRootDimension({ width, height })
+    }
+  }, [width, height, setRootDimension])
+
+  useEffect(() => {
+    setRootPosition({ x: margin, y: 0 })
+  }, [margin, setRootPosition])
 
   return (
     <div className='app'>

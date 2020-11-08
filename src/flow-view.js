@@ -2,6 +2,7 @@ import classnames from 'classnames'
 import { useEffect, useState, useRef } from 'react'
 import zustand from 'zustand'
 
+const emptyArea = { width: 0, height: 0 }
 const rootId = 0
 
 const toId = ({ id }) => id
@@ -13,17 +14,17 @@ const getNodeById = (nodeId) => (state) =>
 const getChildrenNodes = (id) => (state) =>
   id === rootId
     ? state.nodes.filter(
-        ({ id: childId, parentId }) =>
+        ({ id: childId, containerId }) =>
           childId !== rootId &&
-          (parentId === rootId || typeof parentId === 'undefined')
+          (containerId === rootId || typeof containerId === 'undefined')
       )
-    : state.nodes.filter(({ parentId }) => id === parentId)
+    : state.nodes.filter(({ containerId }) => id === containerId)
 
 const getChildrenPipes = (id) => (state) =>
-  state.pipes.filter(({ parentId }) =>
+  state.pipes.filter(({ containerId }) =>
     id === rootId
-      ? parentId === rootId || typeof parentId === 'undefined'
-      : id === parentId
+      ? containerId === rootId || typeof containerId === 'undefined'
+      : id === containerId
   )
 
 const getDescendantNodes = (id) => (state) =>
@@ -93,8 +94,35 @@ const getRenderBody = (id) => (state) => {
 export const createFlowViewStore = ({ nodes, pipes }) =>
   zustand((set) => ({
     nextId: rootId + 1,
-    nodes,
+    highlightedPinTypes: [],
+    nodes: [
+      {
+        id: rootId,
+        noFootbar: true,
+        noHeadbar: true,
+      },
+    ].concat(nodes),
     pipes,
+    setFocusedPinClass: (focusedPinClass) =>
+      set((state) => ({ focusedPinClass })),
+    setFocusedPinNodeId: (focusedPinNodeId) =>
+      set((state) => ({ focusedPinNodeId })),
+    setFocusedPinContainerId: (focusedPinContainerId) =>
+      set((state) => ({ focusedPinContainerId })),
+    setHighlightedPinTypes: (highlightedPinTypes = []) =>
+      set((state) => ({ highlightedPinTypes })),
+    setRootDimension: (dimension) =>
+      set((state) => ({
+        nodes: state.nodes.map(({ id, ...node }) =>
+          id === rootId ? { ...node, id, dimension } : { id, ...node }
+        ),
+      })),
+    setRootPosition: (position) =>
+      set((state) => ({
+        nodes: state.nodes.map(({ id, ...node }) =>
+          id === rootId ? { ...node, id, position } : { id, ...node }
+        ),
+      })),
     setSelectedNodes: (nodeIds, selected) =>
       set((state) => ({
         // 1. First remove the `selected` attribute from nodes that are not involved.
@@ -127,7 +155,7 @@ export const createFlowViewStore = ({ nodes, pipes }) =>
       })),
   }))
 
-export function FlowViewNode({ id = rootId, parentId = rootId, useStore }) {
+export function FlowViewNode({ id = rootId, containerId = rootId, useStore }) {
   const isRoot = id === rootId
 
   const [headbarHeight, setHeadbarHeight] = useState(0)
@@ -153,7 +181,7 @@ export function FlowViewNode({ id = rootId, parentId = rootId, useStore }) {
   }, [footbarRef, setFootbarHeight])
 
   const {
-    dimension,
+    dimension = emptyArea,
     position,
     inputs = [],
     noFootbar,
@@ -161,6 +189,9 @@ export function FlowViewNode({ id = rootId, parentId = rootId, useStore }) {
     outputs = [],
     selected,
   } = useStore(getNodeById(id))
+
+  const { width, height } = dimension
+
   const descendantNodeIds = useStore(getDescendantNodeIds(id))
   const someDescendantNodeIsSelected = useStore(
     getSomeDescendantNodeIsSelected(id)
@@ -219,12 +250,18 @@ export function FlowViewNode({ id = rootId, parentId = rootId, useStore }) {
 
         setStartDraggingPoint()
       }}
-      style={{ ...dimension, top: position.y, left: position.x }}
+      style={{ ...dimension, top: position?.y, left: position?.x }}
     >
       {noHeadbar || (
         <div ref={headbarRef} className='flow-view-node__headbar'>
           {inputs.map((props, i) => (
-            <FlowViewInput key={i} {...props} />
+            <FlowViewInput
+              key={i}
+              containerId={containerId}
+              nodeId={id}
+              useStore={useStore}
+              {...props}
+            />
           ))}
         </div>
       )}
@@ -249,15 +286,21 @@ export function FlowViewNode({ id = rootId, parentId = rootId, useStore }) {
         {renderBody({
           id,
           useStore,
-          width: dimension.width,
-          height: dimension.height - headbarHeight - footbarHeight,
+          width,
+          height: height - headbarHeight - footbarHeight,
         })}
       </div>
 
       {noFootbar || (
         <div ref={footbarRef} className='flow-view-node__footbar'>
           {outputs.map((props, i) => (
-            <FlowViewOutput key={i} {...props} />
+            <FlowViewOutput
+              key={i}
+              containerId={containerId}
+              nodeId={id}
+              useStore={useStore}
+              {...props}
+            />
           ))}
         </div>
       )}
@@ -265,26 +308,78 @@ export function FlowViewNode({ id = rootId, parentId = rootId, useStore }) {
   )
 }
 
-function FlowViewPin(props) {
+function FlowViewPin({
+  containerId,
+  nodeId,
+  pinClass,
+  types,
+  useStore,
+  ...props
+}) {
+  const setFocusedPinClass = useStore((state) => state.setFocusedPinClass)
+  const setFocusedPinContainerId = useStore(
+    (state) => state.setFocusedPinContainerId
+  )
+  const setFocusedPinNodeId = useStore((state) => state.setFocusedPinNodeId)
+  const setHighlightedPinTypes = useStore(
+    (state) => state.setHighlightedPinTypes
+  )
+  const focusedPinClass = useStore((state) => state.focusedPinClass)
+  const focusedPinContainerId = useStore((state) => state.focusedPinContainerId)
+  const focusedPinNodeId = useStore((state) => state.focusedPinNodeId)
+  const highlightedPinTypes = useStore((state) => state.highlightedPinTypes)
+
+  const focusedPinIsInSameContainer =
+    typeof focusedPinContainerId !== 'undefined' &&
+    containerId === focusedPinContainerId
+  const focusedPinIsNotInSameNode =
+    typeof focusedPinNodeId !== 'undefined' && nodeId !== focusedPinNodeId
+  const hasSomeHighlightedType = types.some((type) =>
+    highlightedPinTypes.includes(type)
+  )
+  const oppositePinClassIsFocused =
+    typeof focusedPinClass === 'string' && focusedPinClass !== pinClass
+
+  const highlighted =
+    hasSomeHighlightedType &&
+    oppositePinClassIsFocused &&
+    focusedPinIsInSameContainer &&
+    focusedPinIsNotInSameNode
+
   return (
     <div
-      className='flow-view-pin'
+      className={classnames('flow-view-pin', {
+        'flow-view-pin--highlighted': highlighted,
+      })}
       onClick={(event) => {
         event.stopPropagation()
       }}
       onMouseDown={(event) => {
         event.stopPropagation()
       }}
+      onMouseEnter={() => {
+        setFocusedPinClass(pinClass)
+        setFocusedPinContainerId(containerId)
+        setFocusedPinNodeId(nodeId)
+        setHighlightedPinTypes(types)
+      }}
+      onMouseLeave={() => {
+        setFocusedPinClass()
+        setFocusedPinContainerId()
+        setFocusedPinNodeId()
+        setHighlightedPinTypes()
+      }}
+      {...props}
     />
   )
 }
 
-function FlowViewInput({ ...props }) {
-  return <FlowViewPin {...props} />
+function FlowViewInput(props) {
+  return <FlowViewPin pinClass='input' {...props} />
 }
 
-function FlowViewOutput({ ...props }) {
-  return <FlowViewPin {...props} />
+function FlowViewOutput(props) {
+  return <FlowViewPin pinClass='output' {...props} />
 }
 
 function FlowPipePipe({ source, target, useStore }) {

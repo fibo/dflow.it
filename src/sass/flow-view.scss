@@ -24,6 +24,7 @@ $flow-view-node-bar-background-color: $flow-view-color-white !default;
 $flow-view-node-bar-size: 10px !default;
 
 $flow-view-pin-background-color: $flow-view-color-neutral !default;
+$flow-view-pin-highlight-color: $flow-view-color-black !default;
 $flow-view-pin-size: 10px !default;
 
 .flow-view-node {
@@ -89,4 +90,12 @@ $flow-view-pin-size: 10px !default;
   border-radius: $flow-view-border-radius;
   height: $flow-view-pin-size;
   width: $flow-view-pin-size;
+
+  &:hover {
+    background-color: $flow-view-pin-highlight-color;
+  }
+
+  &--highlighted {
+    background-color: $flow-view-pin-highlight-color;
+  }
 }
