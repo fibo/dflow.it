@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react'
 import zustand from 'zustand'
 
 const emptyArea = { width: 0, height: 0 }
+const originVector = { x: 0, y: 0 }
 const rootId = 0
 
 const toId = ({ id }) => id
@@ -91,18 +92,82 @@ const getRenderBody = (id) => (state) => {
   }
 }
 
-export const createFlowViewStore = ({ nodes, pipes }) =>
-  zustand((set) => ({
+export function flowViewGraphIsValid() {
+  // TODO
+  return true
+}
+
+export function flowViewGraphTopologyFingerprint({ nodes, pipes }) {
+  const nodesSignature = nodes
+    .map(({ containerId, id, type = '' }) => [containerId, id, type].join())
+    .sort()
+  const pipesSignature = pipes
+    .map(({ containerId, id, source, target }) =>
+      [containerId, id].concat(source, target).join()
+    )
+    .sort()
+
+  return `nodes=${nodesSignature.join()}&pipes=${pipesSignature.join()}`
+}
+
+export const createFlowViewStore = () =>
+  zustand((set, get) => ({
     nextId: rootId + 1,
     highlightedPinTypes: [],
     nodes: [
       {
         id: rootId,
+        dimension: emptyArea,
+        position: originVector,
         noFootbar: true,
         noHeadbar: true,
       },
-    ].concat(nodes),
-    pipes,
+    ],
+    pipes: [],
+    appendGraph: ({ nodes = [], pipes = [] }) => {
+      const graphIsValid = flowViewGraphIsValid({ nodes, pipes })
+
+      if (graphIsValid === false) {
+        console.error('flow view graph is not valid')
+        return
+      }
+
+      let nextId = get().nextId
+
+      const idLookup = new Map()
+
+      nodes.concat(pipes).forEach(({ id }) => {
+        idLookup.set(id, nextId++)
+      })
+
+      set((state) => ({
+        nextId,
+        nodes: state.nodes.concat(
+          nodes.map(({ containerId, id, ...rest }) => ({
+            containerId: idLookup.get(containerId),
+            id: idLookup.get(id),
+            ...rest,
+          }))
+        ),
+        pipes: state.pipes.concat(
+          pipes.map(
+            ({
+              containerId,
+              id,
+              source: [sourceNodeId, sourcePinIndex],
+              target: [targetNodeId, targetPinIndex],
+              ...rest
+            }) => ({
+              containerId: idLookup.get(containerId),
+              id: idLookup.get(id),
+              source: [idLookup.get(sourceNodeId), sourcePinIndex],
+              target: [idLookup.get(targetNodeId), targetPinIndex],
+              ...rest,
+            })
+          )
+        ),
+      }))
+    },
     setFocusedPinClass: (focusedPinClass) =>
       set((state) => ({ focusedPinClass })),
     setFocusedPinNodeId: (focusedPinNodeId) =>
@@ -111,12 +176,13 @@ export const createFlowViewStore = ({ nodes, pipes }) =>
       set((state) => ({ focusedPinContainerId })),
     setHighlightedPinTypes: (highlightedPinTypes = []) =>
       set((state) => ({ highlightedPinTypes })),
-    setRootDimension: (dimension) =>
+    setRootDimension: (dimension) => {
       set((state) => ({
         nodes: state.nodes.map(({ id, ...node }) =>
           id === rootId ? { ...node, id, dimension } : { id, ...node }
         ),
-      })),
+      }))
+    },
     setRootPosition: (position) =>
       set((state) => ({
         nodes: state.nodes.map(({ id, ...node }) =>

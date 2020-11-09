@@ -16,6 +16,7 @@ code {
 }
 
 .app {
+  background-color: #fff;
   color: $color-black;
   display: grid;
   grid-template-rows: auto 1fr;
@@ -24,6 +25,7 @@ code {
   &__nav {
     background-color: $color-white;
     margin-left: 10px;
+    margin-right: 10px;
     margin-top: 2px;
   }
 
