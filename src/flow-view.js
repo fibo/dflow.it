@@ -6,8 +6,16 @@ const emptyArea = { width: 0, height: 0 }
 const originVector = { x: 0, y: 0 }
 const rootId = 0
 
+const PinClass = {
+  input: 'input',
+  output: 'output',
+}
+
 const toId = ({ id }) => id
 const isSelected = ({ selected }) => selected
+
+const getPinId = ({ containerId = rootId, nodeId, pinClass, index }) =>
+  `${pinClass}-${containerId}-${nodeId}-${index}`
 
 const getNodeById = (nodeId) => (state) =>
   state.nodes.find(({ id }) => id === nodeId)
@@ -59,7 +67,7 @@ function FlowViewContainerBody({ id, useStore, width, height }) {
       ))}
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         {childrenPipes.map((props, i) => (
-          <FlowPipePipe key={i} useStore={useStore} {...props} />
+          <FlowPipe key={i} useStore={useStore} {...props} />
         ))}
       </svg>
     </>
@@ -221,7 +229,12 @@ export const createFlowViewStore = () =>
       })),
   }))
 
-export function FlowViewNode({ id = rootId, containerId = rootId, useStore }) {
+export function FlowViewNode({
+  id = rootId,
+  containerId = rootId,
+  useStore,
+  error,
+}) {
   const isRoot = id === rootId
 
   const [headbarHeight, setHeadbarHeight] = useState(0)
@@ -273,6 +286,7 @@ export function FlowViewNode({ id = rootId, containerId = rootId, useStore }) {
   return (
     <div
       className={classnames('flow-view-node', {
+        'flow-view-node--has-error': typeof error === 'string',
         'flow-view-node--selected': selected,
       })}
       onClick={(event) => {
@@ -325,6 +339,7 @@ export function FlowViewNode({ id = rootId, containerId = rootId, useStore }) {
               key={i}
               containerId={containerId}
               nodeId={id}
+              index={i}
               useStore={useStore}
               {...props}
             />
@@ -364,6 +379,7 @@ export function FlowViewNode({ id = rootId, containerId = rootId, useStore }) {
               key={i}
               containerId={containerId}
               nodeId={id}
+              index={i}
               useStore={useStore}
               {...props}
             />
@@ -378,6 +394,7 @@ function FlowViewPin({
   containerId,
   nodeId,
   pinClass,
+  index,
   types,
   useStore,
   ...props
@@ -414,6 +431,7 @@ function FlowViewPin({
 
   return (
     <div
+      id={getPinId({ containerId, nodeId, pinClass, index })}
       className={classnames('flow-view-pin', {
         'flow-view-pin--highlighted': highlighted,
       })}
@@ -441,25 +459,56 @@ function FlowViewPin({
 }
 
 function FlowViewInput(props) {
-  return <FlowViewPin pinClass='input' {...props} />
+  return <FlowViewPin pinClass={PinClass.input} {...props} />
 }
 
 function FlowViewOutput(props) {
-  return <FlowViewPin pinClass='output' {...props} />
+  return <FlowViewPin pinClass={PinClass.output} {...props} />
 }
 
-function FlowPipePipe({ source, target, useStore }) {
-  const [sourceNodeId] = source
-  const [targetNodeId] = target
+const getCenterOfPin = ({ containerId = rootId, pinClass, nodeId, index }) => {
+  const pinId = getPinId({ containerId, pinClass, nodeId, index })
+
+  const element = document.getElementById(pinId)
+
+  if (element) {
+    const { width, height, top, left } = element.getBoundingClientRect()
+
+    return {
+      x: left + Math.floor(width / 2),
+      y: top + Math.floor(height / 2),
+    }
+  }
+}
+
+function FlowPipe({ containerId, source, target, useStore }) {
+  const [sourceNodeId, sourcePinIndex] = source
+  const [targetNodeId, targetPinIndex] = target
 
   const sourceNode = useStore(getNodeById(sourceNodeId))
   const targetNode = useStore(getNodeById(targetNodeId))
 
-  const x1 = sourceNode.position.x
-  const y1 = sourceNode.position.y
+  const sourceCenter = getCenterOfPin({
+    containerId,
+    nodeId: sourceNodeId,
+    pinClass: PinClass.output,
+    index: sourcePinIndex,
+  })
+  const targetCenter = getCenterOfPin({
+    containerId,
+    nodeId: targetNodeId,
+    pinClass: PinClass.input,
+    index: targetPinIndex,
+  })
 
-  const x2 = targetNode.position.x
-  const y2 = targetNode.position.y
+  if (!sourceCenter || !targetCenter) return null
 
+  const x1 = sourceNode.position.x + sourceCenter.x
+  const y1 = sourceNode.position.y + sourceCenter.y
+
+  const x2 = targetNode.position.x + targetCenter.x
+  const y2 = targetNode.position.y + targetCenter.y
+
+  console.log(x1, y1, x2, y2)
   return <line className='flow-view-pipe' x1={x1} y1={y1} x2={x2} y2={y2} />
 }

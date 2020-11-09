@@ -5,19 +5,21 @@ $flow-view-font-size: 16px !default;
 $flow-view-color-white: #fff !default;
 $flow-view-color-black: #111 !default;
 $flow-view-color-neutral: #dcdcdc !default;
-$flow-view-color-selected: #ee82ee !default;
+$flow-view-color-error: #de0656 !default;
+$flow-view-color-selected: #8285ee !default;
 
 $flow-view-background-color: $flow-view-color-white !default;
 $flow-view-text-color: $flow-view-color-black !default;
 
 $flow-view-box-shadow: 0 0 7px 1px !default;
 $flow-view-box-shadow-color: rgba($flow-view-color-black, 0.1) !default;
+$flow-view-box-shadow-error-color: rgba($flow-view-color-error, 0.71) !default;
 $flow-view-box-shadow-selected-color: rgba(
   $flow-view-color-selected,
   0.5
 ) !default;
 $flow-view-border-radius: 2px !default;
-$flow-view-border-width: 1px !default;
+$flow-view-border-width: 1px;
 $flow-view-border-color: $flow-view-color-white !default;
 
 $flow-view-node-bar-background-color: $flow-view-color-white !default;
@@ -73,6 +75,10 @@ $flow-view-pin-size: 10px !default;
     display: flex;
     justify-content: space-between;
     min-height: $flow-view-node-bar-size;
+  }
+
+  &--has-error {
+    box-shadow: $flow-view-box-shadow $flow-view-box-shadow-error-color;
   }
 
   &--selected {

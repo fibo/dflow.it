@@ -51,6 +51,7 @@ export function App() {
         {
           id: 1,
           renderBody: () => <div>Hello</div>,
+          error: 'Opsss',
           position: { x: 10, y: 10 },
           dimension: { width: 100, height: 100 },
         },
