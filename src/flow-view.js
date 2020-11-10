@@ -5,6 +5,9 @@ import zustand from 'zustand'
 const emptyArea = { width: 0, height: 0 }
 const originVector = { x: 0, y: 0 }
 const rootId = 0
+const halfPinSize = 5
+const pinSize = 2 * halfPinSize
+const nodeBorderWidth = 1
 
 const PinClass = {
   input: 'input',
@@ -124,8 +127,6 @@ export const createFlowViewStore = () =>
   zustand((set, get) => ({
     nextId: rootId + 1,
     highlightedPinTypes: [],
-    inputRefs: new Map(),
-    outputRefs: new Map(),
     nodes: [
       {
         id: rootId,
@@ -180,12 +181,6 @@ export const createFlowViewStore = () =>
         ),
       }))
     },
-    setInputRef: ([nodeId, pinIndex]) => (ref) => {
-      get().inputRefs.set([nodeId, pinIndex].join(), ref)
-    },
-    setOutputRef: ([nodeId, pinIndex]) => (ref) => {
-      get().outputRefs.set([nodeId, pinIndex].join(), ref)
-    },
     setFocusedPinClass: (focusedPinClass) => {
       set((state) => ({ focusedPinClass }))
     },
@@ -236,8 +231,8 @@ export const createFlowViewStore = () =>
                 ...node,
                 id,
                 position: {
-                  x: position.x + draggingDelta.x,
-                  y: position.y + draggingDelta.y,
+                  x: Math.max(0, position.x + draggingDelta.x),
+                  y: Math.max(0, position.y + draggingDelta.y),
                 },
               }
             : { ...node, id, position }
@@ -254,27 +249,11 @@ export function FlowViewNode({
 }) {
   const isRoot = id === rootId
 
-  const [headbarHeight, setHeadbarHeight] = useState(0)
   const [footbarHeight, setFootbarHeight] = useState(0)
+  const [headbarHeight, setHeadbarHeight] = useState(0)
 
   const footbarRef = useRef()
   const headbarRef = useRef()
-
-  useEffect(() => {
-    if (headbarRef.current) {
-      const { height } = headbarRef.current.getBoundingClientRect()
-
-      setHeadbarHeight(height)
-    }
-  }, [headbarRef, setHeadbarHeight])
-
-  useEffect(() => {
-    if (footbarRef.current) {
-      const { height } = footbarRef.current.getBoundingClientRect()
-
-      setFootbarHeight(height)
-    }
-  }, [footbarRef, setFootbarHeight])
 
   const {
     dimension = emptyArea,
@@ -295,12 +274,26 @@ export function FlowViewNode({
   const isContainer = useStore(getIsContainer(id))
   const renderBody = useStore(getRenderBody(id))
   const selectedNodesIds = useStore(getSelectedNodeIds)
-  const setInputRef = useStore((state) => state.setInputRef)
-  const setOutputRef = useStore((state) => state.setOutputRef)
   const setSelectedNodes = useStore((state) => state.setSelectedNodes)
   const setStartDraggingPoint = useStore((state) => state.setStartDraggingPoint)
   const startDraggingPoint = useStore((state) => state.startDraggingPoint)
   const translateNodes = useStore((state) => state.translateNodes)
+
+  useEffect(() => {
+    if (headbarRef.current) {
+      const { height } = headbarRef.current.getBoundingClientRect()
+
+      setHeadbarHeight(id, height)
+    }
+  }, [id, headbarRef, setHeadbarHeight])
+
+  useEffect(() => {
+    if (footbarRef.current) {
+      const { height } = footbarRef.current.getBoundingClientRect()
+
+      setFootbarHeight(id, height)
+    }
+  }, [id, footbarRef, setFootbarHeight])
 
   return (
     <div
@@ -322,11 +315,6 @@ export function FlowViewNode({
           setSelectedNodes(selectedNodesIds, false)
 
           setSelectedNodes([id], true)
-        }
-      }}
-      onMouseLeave={() => {
-        if (isContainer) {
-          setStartDraggingPoint()
         }
       }}
       onMouseMove={(event) => {
@@ -356,7 +344,6 @@ export function FlowViewNode({
           {inputs.map((props, i) => (
             <FlowViewInput
               key={i}
-              setRef={setInputRef([id, i])}
               containerId={containerId}
               nodeId={id}
               index={i}
@@ -383,6 +370,11 @@ export function FlowViewNode({
             }
           }
         }}
+        onMouseLeave={() => {
+          if (isContainer) {
+            setStartDraggingPoint()
+          }
+        }}
       >
         {renderBody({
           id,
@@ -397,7 +389,6 @@ export function FlowViewNode({
           {outputs.map((props, i) => (
             <FlowViewOutput
               key={i}
-              setRef={setOutputRef([id, i])}
               containerId={containerId}
               nodeId={id}
               index={i}
@@ -416,7 +407,6 @@ function FlowViewPin({
   nodeId,
   pinClass,
   index,
-  setRef,
   types,
   useStore,
 }) {
@@ -452,7 +442,6 @@ function FlowViewPin({
 
   return (
     <div
-      ref={setRef}
       className={classnames('flow-view-pin', {
         'flow-view-pin--highlighted': highlighted,
       })}
@@ -486,26 +475,57 @@ function FlowViewOutput(props) {
   return <FlowViewPin pinClass={PinClass.output} {...props} />
 }
 
-const getCenterOf = (element) => {
-  if (element) {
-    const { width, height, top, left } = element.getBoundingClientRect()
+const getCenterOfPin = ({
+  pinSize,
+  nodeHeight,
+  nodeWidth,
+  numPins,
+  pinClass,
+  pinIndex,
+}) => {
+  const pinX =
+    pinIndex === 0 ? 0 : (pinIndex * (nodeWidth - pinSize)) / (numPins - 1)
+  const pinY = pinClass === PinClass.input ? 0 : nodeHeight - pinSize
 
-    return {
-      x: left + Math.floor(width / 2),
-      y: top + Math.floor(height / 2),
-    }
+  return {
+    x: pinX,
+    y: pinY,
   }
 }
 
 function FlowViewPipe({ source, target, useStore }) {
-  const inputRefs = useStore((state) => state.inputRefs)
-  const outputRefs = useStore((state) => state.outputRefs)
+  const [sourceNodeId, sourcePinIndex] = source
+  const [targetNodeId, targetPinIndex] = target
 
-  const sourceOutputRef = outputRefs.get(source.join())
-  const targetInputRef = inputRefs.get(target.join())
+  const {
+    dimension: sourceDimension,
+    position: sourcePosition,
+    outputs: sourceOutputs = [],
+  } = useStore(getNodeById(sourceNodeId))
 
-  const sourceCenter = getCenterOf(sourceOutputRef)
-  const targetCenter = getCenterOf(targetInputRef)
+  const {
+    dimension: targetDimension,
+    position: targetPosition,
+    inputs: targetInputs = [],
+  } = useStore(getNodeById(targetNodeId))
+
+  const sourceCenter = getCenterOfPin({
+    pinSize,
+    nodeHeight: sourceDimension.height,
+    nodeWidth: sourceDimension.width,
+    numPins: sourceOutputs.length,
+    pinClass: PinClass.output,
+    pinIndex: sourcePinIndex,
+  })
+
+  const targetCenter = getCenterOfPin({
+    pinSize,
+    nodeHeight: targetDimension.height,
+    nodeWidth: targetDimension.width,
+    numPins: targetInputs.length,
+    pinClass: PinClass.input,
+    pinIndex: targetPinIndex,
+  })
 
   if (
     typeof sourceCenter === 'undefined' ||
@@ -513,12 +533,11 @@ function FlowViewPipe({ source, target, useStore }) {
   )
     return null
 
-  const x1 = sourceCenter.x
-  const y1 = sourceCenter.y
+  const x1 = sourcePosition.x + sourceCenter.x + nodeBorderWidth + halfPinSize
+  const y1 = sourcePosition.y + sourceCenter.y + nodeBorderWidth + halfPinSize
 
-  const x2 = targetCenter.x
-  const y2 = targetCenter.y
+  const x2 = targetPosition.x + targetCenter.x + nodeBorderWidth + halfPinSize
+  const y2 = targetPosition.y + targetCenter.y + nodeBorderWidth + halfPinSize
 
-  console.log(x1, y1, x2, y2)
   return <line className='flow-view-pipe' x1={x1} y1={y1} x2={x2} y2={y2} />
 }

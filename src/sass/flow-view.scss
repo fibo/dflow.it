@@ -23,11 +23,10 @@ $flow-view-border-width: 1px;
 $flow-view-border-color: $flow-view-color-white !default;
 
 $flow-view-node-bar-background-color: $flow-view-color-white !default;
-$flow-view-node-bar-size: 10px !default;
 
 $flow-view-pin-background-color: $flow-view-color-neutral !default;
 $flow-view-pin-highlight-color: $flow-view-color-black !default;
-$flow-view-pin-size: 10px !default;
+$flow-view-pin-size: 10px;
 
 .flow-view-node {
   background-color: $flow-view-background-color;
@@ -38,7 +37,6 @@ $flow-view-pin-size: 10px !default;
   flex-direction: column;
   font-family: $flow-view-font-family;
   font-size: $flow-view-font-size;
-  overflow: hidden;
   position: absolute;
 
   &__headbar {
@@ -47,12 +45,13 @@ $flow-view-pin-size: 10px !default;
     border-top-right-radius: $flow-view-border-radius;
     display: flex;
     justify-content: space-between;
-    min-height: $flow-view-node-bar-size;
+    min-height: $flow-view-pin-size;
   }
 
   &__body {
     display: flex;
     flex: 1;
+    overflow: hidden;
     position: relative;
   }
 
@@ -74,7 +73,7 @@ $flow-view-pin-size: 10px !default;
     border-bottom-right-radius: $flow-view-border-radius;
     display: flex;
     justify-content: space-between;
-    min-height: $flow-view-node-bar-size;
+    min-height: $flow-view-pin-size;
   }
 
   &--has-error {
