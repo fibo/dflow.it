@@ -12,10 +12,8 @@ const PinClass = {
 }
 
 const toId = ({ id }) => id
+const notRoot = ({ id }) => id !== rootId
 const isSelected = ({ selected }) => selected
-
-const getPinId = ({ containerId = rootId, nodeId, pinClass, index }) =>
-  `${pinClass}-${containerId}-${nodeId}-${index}`
 
 const getNodeById = (nodeId) => (state) =>
   state.nodes.find(({ id }) => id === nodeId)
@@ -67,7 +65,7 @@ function FlowViewContainerBody({ id, useStore, width, height }) {
       ))}
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         {childrenPipes.map((props, i) => (
-          <FlowPipe key={i} useStore={useStore} {...props} />
+          <FlowViewPipe key={i} useStore={useStore} {...props} />
         ))}
       </svg>
     </>
@@ -107,10 +105,14 @@ export function flowViewGraphIsValid() {
 
 export function flowViewGraphTopologyFingerprint({ nodes, pipes }) {
   const nodesSignature = nodes
-    .map(({ containerId, id, type = '' }) => [containerId, id, type].join())
+    .filter(notRoot)
+    .map(({ containerId = rootId, id, type = '' }) =>
+      [containerId, id, type].join()
+    )
     .sort()
+
   const pipesSignature = pipes
-    .map(({ containerId, id, source, target }) =>
+    .map(({ containerId = rootId, id, source, target }) =>
       [containerId, id].concat(source, target).join()
     )
     .sort()
@@ -122,6 +124,8 @@ export const createFlowViewStore = () =>
   zustand((set, get) => ({
     nextId: rootId + 1,
     highlightedPinTypes: [],
+    inputRefs: new Map(),
+    outputRefs: new Map(),
     nodes: [
       {
         id: rootId,
@@ -176,12 +180,21 @@ export const createFlowViewStore = () =>
         ),
       }))
     },
-    setFocusedPinClass: (focusedPinClass) =>
-      set((state) => ({ focusedPinClass })),
-    setFocusedPinNodeId: (focusedPinNodeId) =>
-      set((state) => ({ focusedPinNodeId })),
-    setFocusedPinContainerId: (focusedPinContainerId) =>
-      set((state) => ({ focusedPinContainerId })),
+    setInputRef: ([nodeId, pinIndex]) => (ref) => {
+      get().inputRefs.set([nodeId, pinIndex].join(), ref)
+    },
+    setOutputRef: ([nodeId, pinIndex]) => (ref) => {
+      get().outputRefs.set([nodeId, pinIndex].join(), ref)
+    },
+    setFocusedPinClass: (focusedPinClass) => {
+      set((state) => ({ focusedPinClass }))
+    },
+    setFocusedPinNodeId: (focusedPinNodeId) => {
+      set((state) => ({ focusedPinNodeId }))
+    },
+    setFocusedPinContainerId: (focusedPinContainerId) => {
+      set((state) => ({ focusedPinContainerId }))
+    },
     setHighlightedPinTypes: (highlightedPinTypes = []) =>
       set((state) => ({ highlightedPinTypes })),
     setRootDimension: (dimension) => {
@@ -191,13 +204,14 @@ export const createFlowViewStore = () =>
         ),
       }))
     },
-    setRootPosition: (position) =>
+    setRootPosition: (position) => {
       set((state) => ({
         nodes: state.nodes.map(({ id, ...node }) =>
           id === rootId ? { ...node, id, position } : { id, ...node }
         ),
-      })),
-    setSelectedNodes: (nodeIds, selected) =>
+      }))
+    },
+    setSelectedNodes: (nodeIds, selected) => {
       set((state) => ({
         // 1. First remove the `selected` attribute from nodes that are not involved.
         nodes: state.nodes
@@ -209,10 +223,12 @@ export const createFlowViewStore = () =>
               .filter(({ id }) => nodeIds.includes(id))
               .map((node) => ({ ...node, selected }))
           ),
-      })),
-    setStartDraggingPoint: (startDraggingPoint) =>
-      set((state) => ({ startDraggingPoint })),
-    translateNodes: (nodeIds, draggingDelta) =>
+      }))
+    },
+    setStartDraggingPoint: (startDraggingPoint) => {
+      set((state) => ({ startDraggingPoint }))
+    },
+    translateNodes: (nodeIds, draggingDelta) => {
       set((state) => ({
         nodes: state.nodes.map(({ id, position, ...node }) =>
           nodeIds.includes(id)
@@ -226,7 +242,8 @@ export const createFlowViewStore = () =>
               }
             : { ...node, id, position }
         ),
-      })),
+      }))
+    },
   }))
 
 export function FlowViewNode({
@@ -278,6 +295,8 @@ export function FlowViewNode({
   const isContainer = useStore(getIsContainer(id))
   const renderBody = useStore(getRenderBody(id))
   const selectedNodesIds = useStore(getSelectedNodeIds)
+  const setInputRef = useStore((state) => state.setInputRef)
+  const setOutputRef = useStore((state) => state.setOutputRef)
   const setSelectedNodes = useStore((state) => state.setSelectedNodes)
   const setStartDraggingPoint = useStore((state) => state.setStartDraggingPoint)
   const startDraggingPoint = useStore((state) => state.startDraggingPoint)
@@ -337,6 +356,7 @@ export function FlowViewNode({
           {inputs.map((props, i) => (
             <FlowViewInput
               key={i}
+              setRef={setInputRef([id, i])}
               containerId={containerId}
               nodeId={id}
               index={i}
@@ -377,6 +397,7 @@ export function FlowViewNode({
           {outputs.map((props, i) => (
             <FlowViewOutput
               key={i}
+              setRef={setOutputRef([id, i])}
               containerId={containerId}
               nodeId={id}
               index={i}
@@ -395,9 +416,9 @@ function FlowViewPin({
   nodeId,
   pinClass,
   index,
+  setRef,
   types,
   useStore,
-  ...props
 }) {
   const setFocusedPinClass = useStore((state) => state.setFocusedPinClass)
   const setFocusedPinContainerId = useStore(
@@ -431,7 +452,7 @@ function FlowViewPin({
 
   return (
     <div
-      id={getPinId({ containerId, nodeId, pinClass, index })}
+      ref={setRef}
       className={classnames('flow-view-pin', {
         'flow-view-pin--highlighted': highlighted,
       })}
@@ -453,7 +474,6 @@ function FlowViewPin({
         setFocusedPinNodeId()
         setHighlightedPinTypes()
       }}
-      {...props}
     />
   )
 }
@@ -466,11 +486,7 @@ function FlowViewOutput(props) {
   return <FlowViewPin pinClass={PinClass.output} {...props} />
 }
 
-const getCenterOfPin = ({ containerId = rootId, pinClass, nodeId, index }) => {
-  const pinId = getPinId({ containerId, pinClass, nodeId, index })
-
-  const element = document.getElementById(pinId)
-
+const getCenterOf = (element) => {
   if (element) {
     const { width, height, top, left } = element.getBoundingClientRect()
 
@@ -481,33 +497,27 @@ const getCenterOfPin = ({ containerId = rootId, pinClass, nodeId, index }) => {
   }
 }
 
-function FlowPipe({ containerId, source, target, useStore }) {
-  const [sourceNodeId, sourcePinIndex] = source
-  const [targetNodeId, targetPinIndex] = target
+function FlowViewPipe({ source, target, useStore }) {
+  const inputRefs = useStore((state) => state.inputRefs)
+  const outputRefs = useStore((state) => state.outputRefs)
 
-  const sourceNode = useStore(getNodeById(sourceNodeId))
-  const targetNode = useStore(getNodeById(targetNodeId))
+  const sourceOutputRef = outputRefs.get(source.join())
+  const targetInputRef = inputRefs.get(target.join())
 
-  const sourceCenter = getCenterOfPin({
-    containerId,
-    nodeId: sourceNodeId,
-    pinClass: PinClass.output,
-    index: sourcePinIndex,
-  })
-  const targetCenter = getCenterOfPin({
-    containerId,
-    nodeId: targetNodeId,
-    pinClass: PinClass.input,
-    index: targetPinIndex,
-  })
+  const sourceCenter = getCenterOf(sourceOutputRef)
+  const targetCenter = getCenterOf(targetInputRef)
 
-  if (!sourceCenter || !targetCenter) return null
+  if (
+    typeof sourceCenter === 'undefined' ||
+    typeof targetCenter === 'undefined'
+  )
+    return null
 
-  const x1 = sourceNode.position.x + sourceCenter.x
-  const y1 = sourceNode.position.y + sourceCenter.y
+  const x1 = sourceCenter.x
+  const y1 = sourceCenter.y
 
-  const x2 = targetNode.position.x + targetCenter.x
-  const y2 = targetNode.position.y + targetCenter.y
+  const x2 = targetCenter.x
+  const y2 = targetCenter.y
 
   console.log(x1, y1, x2, y2)
   return <line className='flow-view-pipe' x1={x1} y1={y1} x2={x2} y2={y2} />
