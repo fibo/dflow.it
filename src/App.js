@@ -1,22 +1,23 @@
 import { useEffect, useState } from 'react'
 import useResizeObserver from 'use-resize-observer'
 
+import { dflowFun } from './dflow'
+import {
+  createFlowViewStore,
+  flowViewGraphTopologyFingerprint,
+  notFlowViewRoot,
+  FlowViewNode,
+} from './flow-view'
 import { Logo } from './components/Logo'
 import * as Addition from './nodes/Addition'
 import * as IONumber from './nodes/IONumber'
 
-import {
-  createFlowViewStore,
-  flowViewGraphTopologyFingerprint,
-  FlowViewNode,
-} from './flow-view'
-
 const flowViewStore = createFlowViewStore()
 
-const task = {
-  Addition: Addition.task,
-  IONumber: IONumber.task,
-}
+const taskMap = new Map()
+
+taskMap.set('Addition', Addition.task)
+taskMap.set('IONumber', IONumber.task)
 
 export function App() {
   const { ref, width, height } = useResizeObserver()
@@ -24,6 +25,7 @@ export function App() {
 
   const [graphTopologyFingerprint, setGraphTopologyFingerprint] = useState('')
   const appendGraph = flowViewStore((state) => state.appendGraph)
+  const updateGraph = flowViewStore((state) => state.updateGraph)
   const setRootDimension = flowViewStore((state) => state.setRootDimension)
   const setRootPosition = flowViewStore((state) => state.setRootPosition)
 
@@ -34,30 +36,48 @@ export function App() {
   }, [])
 
   useEffect(() => {
+    // TODO remove containers and reduce pipes
     const { nodes, pipes } = flowViewStore.getState()
 
-    nodes.forEach(({ type }) => {
-      if (typeof task[type] === 'function') {
-        console.log(type)
-      }
-    })
+    const { errorMap /*, outputMap*/ } = dflowFun(
+      {
+        nodes: nodes.filter(notFlowViewRoot).map(({ id, type, inputs }) => ({
+          id,
+          type,
+          inputs: inputs.map(({ data }) => data),
+        })),
+        pipes: pipes.map(({ id, source, target }) => ({ id, source, target })),
+      },
+      taskMap
+    )
 
-    console.log(pipes)
-  }, [graphTopologyFingerprint])
+    updateGraph({
+      nodes: nodes.map(({ id, outputs, ...node }) => ({
+        error: errorMap.get(id),
+        // outputs: [...outputs[0], outputMap.get(id)],
+      })),
+    })
+  }, [graphTopologyFingerprint, updateGraph])
 
   useEffect(() => {
     appendGraph({
       nodes: [
         {
           id: 1,
+          containerId: 0,
           renderBody: () => <div>Hello</div>,
           error: 'Opsss',
+          inputs: [],
+          outputs: [],
           position: { x: 10, y: 10 },
           dimension: { width: 100, height: 100 },
         },
         {
           id: 2,
           isContainer: true,
+          containerId: 0,
+          inputs: [],
+          outputs: [],
           position: { x: 200, y: 10 },
           dimension: { width: 400, height: 400 },
         },

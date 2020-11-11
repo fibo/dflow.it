@@ -15,7 +15,7 @@ const PinClass = {
 }
 
 const toId = ({ id }) => id
-const notRoot = ({ id }) => id !== rootId
+export const notFlowViewRoot = ({ id }) => id !== rootId
 const isSelected = ({ selected }) => selected
 
 const getNodeById = (nodeId) => (state) =>
@@ -108,14 +108,12 @@ export function flowViewGraphIsValid() {
 
 export function flowViewGraphTopologyFingerprint({ nodes, pipes }) {
   const nodesSignature = nodes
-    .filter(notRoot)
-    .map(({ containerId = rootId, id, type = '' }) =>
-      [containerId, id, type].join()
-    )
+    .filter(notFlowViewRoot)
+    .map(({ containerId, id, type = '' }) => [containerId, id, type].join())
     .sort()
 
   const pipesSignature = pipes
-    .map(({ containerId = rootId, id, source, target }) =>
+    .map(({ containerId, id, source, target }) =>
       [containerId, id].concat(source, target).join()
     )
     .sort()
@@ -130,6 +128,7 @@ export const createFlowViewStore = () =>
     nodes: [
       {
         id: rootId,
+        containerId: rootId,
         dimension: emptyArea,
         position: originVector,
         noFootbar: true,
@@ -137,6 +136,48 @@ export const createFlowViewStore = () =>
       },
     ],
     pipes: [],
+    updateGraph: ({ nodes = [], pipes = [] }) => {
+      set((state) => ({
+        nodes: state.nodes.map(({ containerId, id, ...node }) => {
+          const updatedNode = nodes.find(
+            ({ containerId: nodeCointainerId, id: nodeId }) =>
+              id === nodeId && nodeCointainerId === nodeId
+          )
+
+          if (updatedNode) {
+            return {
+              id,
+              containerId,
+              ...node,
+              ...updatedNode,
+            }
+          } else {
+            return { id, containerId, ...node }
+          }
+        }),
+        pipes: state.pipes.map(({ containerId, id, ...pipe }) => {
+          const updatedPipe = pipes.find(
+            ({ containerId: pipeContainerId, id: pipeId }) =>
+              id === pipeId && pipeContainerId === pipeId
+          )
+
+          if (updatedPipe) {
+            return {
+              id,
+              containerId,
+              ...pipe,
+              ...updatedPipe,
+            }
+          } else {
+            return {
+              containerId,
+              id,
+              ...pipe,
+            }
+          }
+        }),
+      }))
+    },
     appendGraph: ({ nodes = [], pipes = [] }) => {
       const graphIsValid = flowViewGraphIsValid({ nodes, pipes })
 
@@ -247,7 +288,7 @@ export function FlowViewNode({
   useStore,
   error,
 }) {
-  const isRoot = id === rootId
+  const isRoot = (id === rootId) === containerId
 
   const [footbarHeight, setFootbarHeight] = useState(0)
   const [headbarHeight, setHeadbarHeight] = useState(0)
