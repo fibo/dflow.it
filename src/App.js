@@ -39,7 +39,8 @@ export function App() {
     // TODO remove containers and reduce pipes
     const { nodes, pipes } = flowViewStore.getState()
 
-    const { errorMap /*, outputMap*/ } = dflowFun(
+    console.log('xx', nodes)
+    const { errorMap, outputMap } = dflowFun(
       {
         nodes: nodes.filter(notFlowViewRoot).map(({ id, type, inputs }) => ({
           id,
@@ -52,10 +53,14 @@ export function App() {
     )
 
     updateGraph({
-      nodes: nodes.map(({ id, outputs, ...node }) => ({
-        error: errorMap.get(id),
-        // outputs: [...outputs[0], outputMap.get(id)],
-      })),
+      nodes: nodes
+        .filter(notFlowViewRoot)
+        .map(({ id, outputs: [output], ...node }) => ({
+          ...node,
+          id,
+          error: errorMap.get(id),
+          outputs: output ? [{ ...output, data: outputMap.get(id) }] : [],
+        })),
     })
   }, [graphTopologyFingerprint, updateGraph])
 

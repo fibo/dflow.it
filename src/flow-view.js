@@ -141,7 +141,7 @@ export const createFlowViewStore = () =>
         nodes: state.nodes.map(({ containerId, id, ...node }) => {
           const updatedNode = nodes.find(
             ({ containerId: nodeCointainerId, id: nodeId }) =>
-              id === nodeId && nodeCointainerId === nodeId
+              id === nodeId && nodeCointainerId === containerId
           )
 
           if (updatedNode) {
@@ -189,9 +189,16 @@ export const createFlowViewStore = () =>
       let nextId = get().nextId
 
       const idLookup = new Map()
+      idLookup.set(rootId, rootId)
 
-      nodes.concat(pipes).forEach(({ id }) => {
-        idLookup.set(id, nextId++)
+      nodes.concat(pipes).forEach(({ containerId, id }) => {
+        if (!idLookup.has(containerId)) {
+          idLookup.set(containerId, nextId++)
+        }
+
+        if (!idLookup.has(id)) {
+          idLookup.set(id, nextId++)
+        }
       })
 
       set((state) => ({
@@ -445,9 +452,10 @@ export function FlowViewNode({
 
 function FlowViewPin({
   containerId,
+  data,
+  index,
   nodeId,
   pinClass,
-  index,
   types,
   useStore,
 }) {
@@ -493,6 +501,8 @@ function FlowViewPin({
         event.stopPropagation()
       }}
       onMouseEnter={() => {
+        console.log(data, types.join())
+
         setFocusedPinClass(pinClass)
         setFocusedPinContainerId(containerId)
         setFocusedPinNodeId(nodeId)

@@ -50,6 +50,8 @@ export function dflowFun({ nodes: previousNodes, pipes }, taskMap) {
           try {
             const output = task(inputs)
 
+            console.log(type, output)
+
             outputMap.set(id, output)
           } catch (error) {
             errorMap.set(id, error.message)
