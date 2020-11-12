@@ -23,6 +23,7 @@ $flow-view-border-width: 1px;
 $flow-view-border-color: $flow-view-color-white !default;
 
 $flow-view-node-bar-background-color: $flow-view-color-white !default;
+$flow-view-node-pin-preview-font-size: 14px !default;
 
 $flow-view-pin-background-color: $flow-view-color-neutral !default;
 $flow-view-pin-highlight-color: $flow-view-color-black !default;
@@ -74,6 +75,31 @@ $flow-view-pin-size: 10px;
     display: flex;
     justify-content: space-between;
     min-height: $flow-view-pin-size;
+  }
+
+  &__pin-preview {
+    background-color: $flow-view-color-white;
+    border-radius: $flow-view-border-radius;
+    box-shadow: $flow-view-box-shadow $flow-view-box-shadow-color;
+    display: flex;
+    flex-direction: column;
+    font-size: $flow-view-node-pin-preview-font-size;
+    padding-bottom: 0.5em;
+    padding-left: 1em;
+    padding-right: 1em;
+    padding-top: 0.5em;
+    position: absolute;
+    text-align: start;
+  }
+
+  &__pin-preview-types {
+    font-style: italic;
+  }
+
+  &__pin-preview-data {
+    font-family: $flow-view-font-family-mono;
+    max-width: 200px;
+    text-overflow: ellipsis;
   }
 
   &--has-error {

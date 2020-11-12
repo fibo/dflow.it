@@ -15,7 +15,7 @@ const PinClass = {
 }
 
 const toId = ({ id }) => id
-export const notFlowViewRoot = ({ id }) => id !== rootId
+const notFlowViewRoot = ({ id }) => id !== rootId
 const isSelected = ({ selected }) => selected
 
 const getNodeById = (nodeId) => (state) =>
@@ -43,6 +43,26 @@ const getDescendantNodes = (id) => (state) =>
       descendants.concat(node).concat(getDescendantNodes(node.id)(state)),
     []
   )
+
+const getInputPipe = (nodeId, inputIndex) => (state) =>
+  state.pipes.find(
+    ({ target: [targetNodeId, targetPinIndex] }) =>
+      nodeId === targetNodeId && inputIndex === targetPinIndex
+  )
+
+const getSourcePin = (nodeId, inputIndex) => (state) => {
+  const inputPipe = getInputPipe(nodeId, inputIndex)(state)
+
+  if (inputPipe) {
+    const {
+      source: [sourceNodeId, sourcePinIndex],
+    } = inputPipe
+
+    const sourceNode = getNodeById(sourceNodeId)(state)
+
+    return sourceNode.outputs[sourcePinIndex]
+  }
+}
 
 const getDescendantNodeIds = (id) => (state) =>
   getDescendantNodes(id)(state).map(toId)
@@ -124,11 +144,12 @@ export function flowViewGraphTopologyFingerprint({ nodes, pipes }) {
 export const createFlowViewStore = () =>
   zustand((set, get) => ({
     nextId: rootId + 1,
-    highlightedPinTypes: [],
+    focusedPinTypes: [],
     nodes: [
       {
         id: rootId,
         containerId: rootId,
+        isContainer: true,
         dimension: emptyArea,
         position: originVector,
         noFootbar: true,
@@ -232,14 +253,17 @@ export const createFlowViewStore = () =>
     setFocusedPinClass: (focusedPinClass) => {
       set((state) => ({ focusedPinClass }))
     },
+    setFocusedPinData: (focusedPinData) => {
+      set((state) => ({ focusedPinData }))
+    },
     setFocusedPinNodeId: (focusedPinNodeId) => {
       set((state) => ({ focusedPinNodeId }))
     },
     setFocusedPinContainerId: (focusedPinContainerId) => {
       set((state) => ({ focusedPinContainerId }))
     },
-    setHighlightedPinTypes: (highlightedPinTypes = []) =>
-      set((state) => ({ highlightedPinTypes })),
+    setFocusedPinTypes: (focusedPinTypes = []) =>
+      set((state) => ({ focusedPinTypes })),
     setRootDimension: (dimension) => {
       set((state) => ({
         nodes: state.nodes.map(({ id, ...node }) =>
@@ -316,6 +340,9 @@ export function FlowViewNode({
   const { width, height } = dimension
 
   const descendantNodeIds = useStore(getDescendantNodeIds(id))
+  const focusedPinNodeId = useStore((state) => state.focusedPinNodeId)
+  const focusedPinData = useStore((state) => state.focusedPinData)
+  const focusedPinTypes = useStore((state) => state.focusedPinTypes)
   const someDescendantNodeIsSelected = useStore(
     getSomeDescendantNodeIsSelected(id)
   )
@@ -344,109 +371,130 @@ export function FlowViewNode({
   }, [id, footbarRef, setFootbarHeight])
 
   return (
-    <div
-      className={classnames('flow-view-node', {
-        'flow-view-node--has-error': typeof error === 'string',
-        'flow-view-node--selected': selected,
-      })}
-      onClick={(event) => {
-        event.stopPropagation()
-      }}
-      onMouseDown={(event) => {
-        event.stopPropagation()
-
-        setStartDraggingPoint({ x: event.clientX, y: event.clientY })
-
-        if (isRoot) {
-          setSelectedNodes(descendantNodeIds, false)
-        } else {
-          setSelectedNodes(selectedNodesIds, false)
-
-          setSelectedNodes([id], true)
-        }
-      }}
-      onMouseMove={(event) => {
-        if (isContainer) {
+    <>
+      <div
+        className={classnames('flow-view-node', {
+          'flow-view-node--has-error': typeof error === 'string',
+          'flow-view-node--selected': selected,
+        })}
+        onClick={(event) => {
+          event.stopPropagation()
+        }}
+        onMouseDown={(event) => {
           event.stopPropagation()
 
-          if (startDraggingPoint) {
-            const { clientX: x, clientY: y } = event
+          setStartDraggingPoint({ x: event.clientX, y: event.clientY })
 
-            translateNodes(selectedNodesIds, {
-              x: x - startDraggingPoint.x,
-              y: y - startDraggingPoint.y,
-            })
-            setStartDraggingPoint({ x, y })
+          if (isRoot) {
+            setSelectedNodes(descendantNodeIds, false)
+          } else {
+            setSelectedNodes(selectedNodesIds, false)
+
+            setSelectedNodes([id], true)
           }
-        }
-      }}
-      onMouseUp={(event) => {
-        event.stopPropagation()
-
-        setStartDraggingPoint()
-      }}
-      style={{ ...dimension, top: position?.y, left: position?.x }}
-    >
-      {noHeadbar || (
-        <div ref={headbarRef} className='flow-view-node__headbar'>
-          {inputs.map((props, i) => (
-            <FlowViewInput
-              key={i}
-              containerId={containerId}
-              nodeId={id}
-              index={i}
-              useStore={useStore}
-              {...props}
-            />
-          ))}
-        </div>
-      )}
-
-      <div
-        className='flow-view-node__body'
-        onMouseDown={(event) => {
-          if (isRoot) return
-
+        }}
+        onMouseMove={(event) => {
           if (isContainer) {
-            if (selected) {
-            } else {
-              event.stopPropagation()
+            event.stopPropagation()
 
-              if (someDescendantNodeIsSelected) {
-                setSelectedNodes(descendantNodeIds, false)
-              }
+            if (startDraggingPoint) {
+              const { clientX: x, clientY: y } = event
+
+              translateNodes(selectedNodesIds, {
+                x: x - startDraggingPoint.x,
+                y: y - startDraggingPoint.y,
+              })
+              setStartDraggingPoint({ x, y })
             }
           }
         }}
-        onMouseLeave={() => {
-          if (isContainer) {
-            setStartDraggingPoint()
-          }
-        }}
-      >
-        {renderBody({
-          id,
-          useStore,
-          width,
-          height: height - headbarHeight - footbarHeight,
-        })}
-      </div>
+        onMouseUp={(event) => {
+          event.stopPropagation()
 
-      {noFootbar || (
-        <div ref={footbarRef} className='flow-view-node__footbar'>
-          {outputs.map((props, i) => (
-            <FlowViewOutput
-              key={i}
-              containerId={containerId}
-              nodeId={id}
-              index={i}
-              useStore={useStore}
-              {...props}
-            />
-          ))}
+          setStartDraggingPoint()
+        }}
+        style={{ ...dimension, top: position?.y, left: position?.x }}
+      >
+        {noHeadbar || (
+          <div ref={headbarRef} className='flow-view-node__headbar'>
+            {inputs.map((props, i) => (
+              <FlowViewInput
+                key={i}
+                containerId={containerId}
+                nodeId={id}
+                index={i}
+                useStore={useStore}
+                {...props}
+              />
+            ))}
+          </div>
+        )}
+
+        <div
+          className='flow-view-node__body'
+          onMouseDown={(event) => {
+            if (isRoot) return
+
+            if (isContainer) {
+              if (selected) {
+              } else {
+                event.stopPropagation()
+
+                if (someDescendantNodeIsSelected) {
+                  setSelectedNodes(descendantNodeIds, false)
+                }
+              }
+            }
+          }}
+          onMouseLeave={() => {
+            if (isContainer) {
+              setStartDraggingPoint()
+            }
+          }}
+        >
+          {renderBody({
+            id,
+            useStore,
+            width,
+            height: height - headbarHeight - footbarHeight,
+          })}
+        </div>
+
+        {noFootbar || (
+          <div ref={footbarRef} className='flow-view-node__footbar'>
+            {outputs.map((props, i) => (
+              <FlowViewOutput
+                key={i}
+                containerId={containerId}
+                nodeId={id}
+                index={i}
+                useStore={useStore}
+                {...props}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      {focusedPinNodeId === id && (
+        <div
+          className='flow-view-node__pin-preview'
+          style={{
+            left: position.x + dimension.width + 10,
+            top: position.y,
+          }}
+        >
+          <div className='flow-view-node__pin-preview-types'>
+            {Array.isArray(focusedPinTypes) ? focusedPinTypes.join() : 'any'}
+          </div>
+
+          <div className='flow-view-node__pin-preview-data'>
+            {typeof focusedPinData === 'undefined'
+              ? 'undefined'
+              : String(focusedPinData)}
+          </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 
@@ -460,17 +508,16 @@ function FlowViewPin({
   useStore,
 }) {
   const setFocusedPinClass = useStore((state) => state.setFocusedPinClass)
+  const setFocusedPinData = useStore((state) => state.setFocusedPinData)
   const setFocusedPinContainerId = useStore(
     (state) => state.setFocusedPinContainerId
   )
   const setFocusedPinNodeId = useStore((state) => state.setFocusedPinNodeId)
-  const setHighlightedPinTypes = useStore(
-    (state) => state.setHighlightedPinTypes
-  )
+  const setFocusedPinTypes = useStore((state) => state.setFocusedPinTypes)
   const focusedPinClass = useStore((state) => state.focusedPinClass)
   const focusedPinContainerId = useStore((state) => state.focusedPinContainerId)
   const focusedPinNodeId = useStore((state) => state.focusedPinNodeId)
-  const highlightedPinTypes = useStore((state) => state.highlightedPinTypes)
+  const focusedPinTypes = useStore((state) => state.focusedPinTypes)
 
   const focusedPinIsInSameContainer =
     typeof focusedPinContainerId !== 'undefined' &&
@@ -478,7 +525,7 @@ function FlowViewPin({
   const focusedPinIsNotInSameNode =
     typeof focusedPinNodeId !== 'undefined' && nodeId !== focusedPinNodeId
   const hasSomeHighlightedType = types.some((type) =>
-    highlightedPinTypes.includes(type)
+    focusedPinTypes.includes(type)
   )
   const oppositePinClassIsFocused =
     typeof focusedPinClass === 'string' && focusedPinClass !== pinClass
@@ -501,25 +548,34 @@ function FlowViewPin({
         event.stopPropagation()
       }}
       onMouseEnter={() => {
-        console.log(data, types.join())
-
         setFocusedPinClass(pinClass)
+        setFocusedPinData(data)
         setFocusedPinContainerId(containerId)
         setFocusedPinNodeId(nodeId)
-        setHighlightedPinTypes(types)
+        setFocusedPinTypes(types)
       }}
       onMouseLeave={() => {
         setFocusedPinClass()
-        setFocusedPinContainerId()
+        setFocusedPinData()
         setFocusedPinNodeId()
-        setHighlightedPinTypes()
+        setFocusedPinTypes()
       }}
     />
   )
 }
 
 function FlowViewInput(props) {
-  return <FlowViewPin pinClass={PinClass.input} {...props} />
+  const { nodeId, index, useStore } = props
+
+  const sourcePin = useStore(getSourcePin(nodeId, index))
+
+  return (
+    <FlowViewPin
+      pinClass={PinClass.input}
+      {...props}
+      data={sourcePin ? sourcePin.data : props.data}
+    />
+  )
 }
 
 function FlowViewOutput(props) {

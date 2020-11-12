@@ -5,12 +5,13 @@ import { dflowFun } from './dflow'
 import {
   createFlowViewStore,
   flowViewGraphTopologyFingerprint,
-  notFlowViewRoot,
   FlowViewNode,
 } from './flow-view'
 import { Logo } from './components/Logo'
+
 import * as Addition from './nodes/Addition'
 import * as IONumber from './nodes/IONumber'
+import * as Markdown from './nodes/Markdown'
 
 const flowViewStore = createFlowViewStore()
 
@@ -18,6 +19,7 @@ const taskMap = new Map()
 
 taskMap.set('Addition', Addition.task)
 taskMap.set('IONumber', IONumber.task)
+taskMap.set('Markdown', Markdown.task)
 
 export function App() {
   const { ref, width, height } = useResizeObserver()
@@ -39,13 +41,14 @@ export function App() {
     // TODO remove containers and reduce pipes
     const { nodes, pipes } = flowViewStore.getState()
 
-    console.log('xx', nodes)
+    const tasks = nodes.filter(({ isContainer }) => isContainer !== true)
+
     const { errorMap, outputMap } = dflowFun(
       {
-        nodes: nodes.filter(notFlowViewRoot).map(({ id, type, inputs }) => ({
+        nodes: tasks.map(({ id, type, inputs }) => ({
           id,
           type,
-          inputs: inputs.map(({ data }) => data),
+          inputs,
         })),
         pipes: pipes.map(({ id, source, target }) => ({ id, source, target })),
       },
@@ -53,14 +56,12 @@ export function App() {
     )
 
     updateGraph({
-      nodes: nodes
-        .filter(notFlowViewRoot)
-        .map(({ id, outputs: [output], ...node }) => ({
-          ...node,
-          id,
-          error: errorMap.get(id),
-          outputs: output ? [{ ...output, data: outputMap.get(id) }] : [],
-        })),
+      nodes: tasks.map(({ id, outputs: [output], ...node }) => ({
+        ...node,
+        id,
+        error: errorMap.get(id),
+        outputs: output ? [{ ...output, data: outputMap.get(id) }] : [],
+      })),
     })
   }, [graphTopologyFingerprint, updateGraph])
 
@@ -71,6 +72,7 @@ export function App() {
           id: 1,
           containerId: 0,
           renderBody: () => <div>Hello</div>,
+          type: 'Markdown',
           error: 'Opsss',
           inputs: [],
           outputs: [],
@@ -121,7 +123,7 @@ export function App() {
           containerId: 2,
           id: 6,
           source: [3, 0],
-          target: [4, 0],
+          target: [4, 1],
         },
       ],
     })

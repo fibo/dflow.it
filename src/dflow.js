@@ -1,11 +1,16 @@
-function getInputPipes(node, pipes) {
-  const { id: nodeId } = node
+function getInputPipe(nodeId, inputIndex, pipes) {
+  return pipes.find(
+    ({ target: [targetNodeId, targetPinIndex] }) =>
+      targetNodeId === nodeId && targetPinIndex === inputIndex
+  )
+}
 
+function getInputPipes(nodeId, pipes) {
   return pipes.filter(({ target: [targetNodeId] }) => targetNodeId === nodeId)
 }
 
-function getParentsOfNode(node, nodes, pipes) {
-  const parentNodesIds = getInputPipes(node, pipes).map(
+function getParentsOfNode(nodeId, nodes, pipes) {
+  const parentNodesIds = getInputPipes(nodeId, pipes).map(
     ({ source: [sourceNodeId] }) => sourceNodeId
   )
 
@@ -14,7 +19,9 @@ function getParentsOfNode(node, nodes, pipes) {
 
 // The level of a node is the max level of its parents + 1.
 function getNodeLevel(node, nodes, pipes) {
-  const parentsOfNode = getParentsOfNode(node, nodes, pipes)
+  const { id: nodeId } = node
+
+  const parentsOfNode = getParentsOfNode(nodeId, nodes, pipes)
 
   if (parentsOfNode.length === 0) {
     return 0
@@ -36,28 +43,40 @@ export function dflowFun({ nodes: previousNodes, pipes }, taskMap) {
       const levelA = getNodeLevel(nodeA, previousNodes, pipes)
       const levelB = getNodeLevel(nodeB, previousNodes, pipes)
 
-      if (levelA < levelB) return 1
-      if (levelA > levelB) return -1
+      if (levelA > levelB) return 1
+      if (levelA < levelB) return -1
       return 0
     })
     .reduce(
       ({ errorMap, outputMap }, node) => {
-        const { id, inputs, type } = node
+        const { id: nodeId, inputs, type } = node
 
         const task = taskMap.get(type)
 
         if (typeof task === 'function') {
           try {
-            const output = task(inputs)
+            const args = inputs.map(({ data }, inputIndex) => {
+              const inputPipe = getInputPipe(nodeId, inputIndex, pipes)
 
-            console.log(type, output)
+              if (inputPipe) {
+                const {
+                  source: [sourceNodeId],
+                } = inputPipe
 
-            outputMap.set(id, output)
+                return outputMap.get(sourceNodeId)
+              } else {
+                return data
+              }
+            })
+
+            const output = task(args)
+
+            outputMap.set(nodeId, output)
           } catch (error) {
-            errorMap.set(id, error.message)
+            errorMap.set(nodeId, error.message)
           }
         } else {
-          console.warn('task not found, node id and type are:', id, type)
+          console.warn('task not found', 'nodeId =', nodeId, 'type = ', type)
         }
 
         return { errorMap, outputMap }
