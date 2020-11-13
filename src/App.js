@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { animated, useSpring } from 'react-spring'
 import useResizeObserver from 'use-resize-observer'
 
 import { dflowFun } from './dflow'
@@ -8,22 +9,27 @@ import {
   FlowViewNode,
 } from './flow-view'
 import { Logo } from './components/Logo'
+import { taskMap } from './nodes'
 
-import * as Addition from './nodes/Addition'
-import * as IONumber from './nodes/IONumber'
-import * as Markdown from './nodes/Markdown'
+const AnimatedLogo = animated(Logo)
 
 const flowViewStore = createFlowViewStore()
-
-const taskMap = new Map()
-
-taskMap.set('Addition', Addition.task)
-taskMap.set('IONumber', IONumber.task)
-taskMap.set('Markdown', Markdown.task)
+const initialLogoSize = 17
 
 export function App() {
   const { ref, width, height } = useResizeObserver()
   const margin = 10
+
+  const [enterMenu, setEnterMenu] = useState(false)
+  const spring = useSpring({
+    size: enterMenu ? initialLogoSize * 10 : initialLogoSize,
+    from: { size: initialLogoSize },
+    config: {
+      mass: 1,
+      tension: 170,
+      friction: 17,
+    },
+  })
 
   const [graphTopologyFingerprint, setGraphTopologyFingerprint] = useState('')
   const appendGraph = flowViewStore((state) => state.appendGraph)
@@ -141,8 +147,16 @@ export function App() {
 
   return (
     <div className='app'>
-      <div className='app__nav'>
-        <Logo size={17} />
+      <div
+        className='app__nav'
+        onMouseEnter={() => {
+          setEnterMenu(true)
+        }}
+        onMouseLeave={() => {
+          setEnterMenu(false)
+        }}
+      >
+        <AnimatedLogo size={spring.size} />
       </div>
       <div ref={ref} className='app__body'>
         {width && height && <FlowViewNode useStore={flowViewStore} />}
