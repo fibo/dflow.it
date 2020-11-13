@@ -66,7 +66,7 @@ export function Logo({ fill = '#7d90c8', size = 32 }) {
           fillRule='nonzero'
         />
       </g>
-      <text x='180' y='130' fill='white' fontSize='60'>
+      <text x='180' y='125' fill='white' fontSize='60'>
         dflow
       </text>
     </svg>

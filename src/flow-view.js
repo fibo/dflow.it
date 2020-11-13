@@ -77,7 +77,7 @@ const getSomeDescendantNodeIsSelected = (id) => (state) =>
 const getIsContainer = (id) => (state) =>
   id === rootId || getNodeById(id)(state)?.isContainer === true
 
-function FlowViewContainerBody({ id, useStore, width, height }) {
+function FlowViewContainer({ id, useStore, width, height }) {
   const childrenNodes = useStore(getChildrenNodes(id))
   const childrenPipes = useStore(getChildrenPipes(id))
 
@@ -95,26 +95,32 @@ function FlowViewContainerBody({ id, useStore, width, height }) {
   )
 }
 
+export function FlowViewNodeLabel({ label, comment }) {
+  return (
+    <div
+      className={classnames('flow-view-node__label', {
+        'flow-view-node__label--has-comment': comment,
+      })}
+    >
+      <span>{label}</span>
+      {comment && <span className='flow-view-node__comment'>{comment}</span>}
+    </div>
+  )
+}
+
 const getRenderBody = (id) => (state) => {
   const node = getNodeById(id)(state)
 
-  const hasRenderBody = typeof node.renderBody === 'function'
-  const hasText = typeof node.text === 'string'
+  const { Component } = node
+  const hasComponent = typeof Component === 'function'
   const isContainer = getIsContainer(id)(state)
 
   switch (true) {
-    case hasRenderBody:
-      return node.renderBody
+    case hasComponent:
+      return (props) => <Component {...props} />
 
     case isContainer:
-      return (props) => <FlowViewContainerBody {...props} />
-
-    case hasText:
-      return () => (
-        <div className='flow-view-node__label'>
-          <span>{node.text}</span>
-        </div>
-      )
+      return (props) => <FlowViewContainer {...props} />
 
     default:
       return () => null
@@ -316,6 +322,8 @@ export const createFlowViewStore = () =>
 export function FlowViewNode({
   id = rootId,
   containerId = rootId,
+  label,
+  comment,
   useStore,
   error,
 }) {
@@ -454,6 +462,12 @@ export function FlowViewNode({
         >
           {renderBody({
             id,
+            inputs,
+            outputs,
+            label,
+            comment,
+            selected,
+            error,
             useStore,
             width,
             height: height - headbarHeight - footbarHeight,

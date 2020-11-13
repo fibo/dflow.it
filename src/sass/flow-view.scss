@@ -61,6 +61,20 @@ $flow-view-pin-size: 10px;
     display: flex;
     flex: 1;
     justify-content: center;
+
+    &--has-comment {
+      justify-content: start;
+      padding-left: 1em;
+    }
+  }
+
+  &__comment {
+    font-size: 0.8em;
+    padding-left: 0.5em;
+
+    &::before {
+      content: '// ';
+    }
   }
 
   &__label span {

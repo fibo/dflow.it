@@ -5,9 +5,8 @@ export const metadata = {
       types: ['number'],
     },
   ],
-  outputs: [
+  output: [
     {
-      num: 1,
       types: ['number'],
     },
   ],

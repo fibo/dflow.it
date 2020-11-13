@@ -9,7 +9,7 @@ import {
   FlowViewNode,
 } from './flow-view'
 import { Logo } from './components/Logo'
-import { taskMap } from './nodes'
+import { componentMap, metadataMap, taskMap } from './nodes'
 
 const AnimatedLogo = animated(Logo)
 
@@ -77,10 +77,14 @@ export function App() {
         {
           id: 1,
           containerId: 0,
-          renderBody: () => <div>Hello</div>,
           type: 'Markdown',
           error: 'Opsss',
-          inputs: [],
+          inputs: [
+            {
+              data: ['# dflow', '> Dataflow programming'],
+              types: ['string[]'],
+            },
+          ],
           outputs: [],
           position: { x: 10, y: 10 },
           dimension: { width: 100, height: 100 },
@@ -107,9 +111,12 @@ export function App() {
         {
           containerId: 2,
           id: 4,
+          Component: componentMap.get('Addition'),
+          comment: 'add',
           position: { x: 100, y: 70 },
-          dimension: { width: 40, height: 40 },
+          dimension: { width: 100, height: 40 },
           type: 'Addition',
+          label: metadataMap.get('Addition').label,
           text: '+',
           inputs: [
             { types: ['number', 'string'] },
