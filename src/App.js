@@ -156,7 +156,7 @@ export function App() {
           setEnterMenu(false)
         }}
       >
-        <AnimatedLogo size={spring.size} />
+        <AnimatedLogo size={spring.size.interpolate((n) => parseInt(n))} />
       </div>
       <div ref={ref} className='app__body'>
         {width && height && <FlowViewNode useStore={flowViewStore} />}
