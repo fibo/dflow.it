@@ -1,0 +1,14 @@
+.dflow-node-io-number {
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+
+  input {
+    border: 0;
+    font-family: $font-family;
+    height: 20px;
+    outline: none;
+    padding-left: 1em;
+    width: 80%;
+  }
+}

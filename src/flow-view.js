@@ -95,12 +95,13 @@ function FlowViewContainer({ id, useStore, width, height }) {
   )
 }
 
-export function FlowViewNodeLabel({ label, comment }) {
+export function FlowViewNodeLabel({ label, comment, onClick }) {
   return (
     <div
       className={classnames('flow-view-node__label', {
         'flow-view-node__label--has-comment': comment,
       })}
+      onClick={onClick}
     >
       <span>{label}</span>
       {comment && <span className='flow-view-node__comment'>{comment}</span>}
@@ -165,21 +166,17 @@ export const createFlowViewStore = () =>
     pipes: [],
     updateGraph: ({ nodes = [], pipes = [] }) => {
       set((state) => ({
-        nodes: state.nodes.map(({ containerId, id, ...node }) => {
-          const updatedNode = nodes.find(
-            ({ containerId: nodeCointainerId, id: nodeId }) =>
-              id === nodeId && nodeCointainerId === containerId
-          )
+        nodes: state.nodes.map(({ id, ...node }) => {
+          const updatedNode = nodes.find(({ id: nodeId }) => id === nodeId)
 
           if (updatedNode) {
             return {
               id,
-              containerId,
               ...node,
               ...updatedNode,
             }
           } else {
-            return { id, containerId, ...node }
+            return { id, ...node }
           }
         }),
         pipes: state.pipes.map(({ containerId, id, ...pipe }) => {
@@ -462,6 +459,7 @@ export function FlowViewNode({
         >
           {renderBody({
             id,
+            containerId,
             inputs,
             outputs,
             label,

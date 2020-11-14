@@ -8,7 +8,7 @@ export const metadata = {
       types: ['number', 'string'],
     },
   ],
-  output: [
+  outputs: [
     {
       types: ['number'],
     },

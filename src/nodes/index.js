@@ -22,4 +22,5 @@ taskMap.set(nodeType.Markdown, Markdown.task)
 export const componentMap = new Map()
 
 componentMap.set(nodeType.Addition, Addition.Component)
+componentMap.set(nodeType.IONumber, IONumber.Component)
 componentMap.set(nodeType.Markdown, Markdown.Component)
