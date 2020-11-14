@@ -48,7 +48,7 @@ export function Component(props) {
 
   const updateGraph = useStore((state) => state.updateGraph)
 
-  const inputData = inputs[0].data
+  const inputData = inputs[0]?.data
 
   useEffect(() => {
     if (isEditing) {

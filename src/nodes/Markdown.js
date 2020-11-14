@@ -16,7 +16,7 @@ export function Component({ inputs: [rows] }) {
   return (
     <div>
       <Markdown plugins={[gfm]}>
-        {Array.isArray(rows.data) && rows.data.join('\n')}
+        {Array.isArray(rows?.data) && rows.data.join('\n')}
       </Markdown>
     </div>
   )

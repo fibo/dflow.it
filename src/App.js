@@ -9,7 +9,7 @@ import {
   FlowViewNode,
 } from './flow-view'
 import { Logo } from './components/Logo'
-import { componentMap, metadataMap, taskMap } from './nodes'
+import { componentMap, taskMap } from './nodes'
 
 const AnimatedLogo = animated(Logo)
 
@@ -77,6 +77,7 @@ export function App() {
         {
           id: 1,
           containerId: 0,
+          Component: componentMap.get('Markdown'),
           type: 'Markdown',
           error: 'Opsss',
           inputs: [
@@ -87,7 +88,7 @@ export function App() {
           ],
           outputs: [],
           position: { x: 10, y: 10 },
-          dimension: { width: 100, height: 100 },
+          dimension: { width: 150, height: 400 },
         },
         {
           id: 2,
@@ -96,12 +97,12 @@ export function App() {
           inputs: [],
           outputs: [],
           position: { x: 200, y: 10 },
-          dimension: { width: 400, height: 400 },
+          dimension: { width: 200, height: 400 },
         },
         {
           containerId: 2,
           id: 3,
-          position: { x: 100, y: 10 },
+          position: { x: 20, y: 10 },
           dimension: { width: 100, height: 40 },
           Component: componentMap.get('IONumber'),
           type: 'IONumber',
@@ -114,30 +115,56 @@ export function App() {
           id: 4,
           Component: componentMap.get('Addition'),
           comment: 'add',
-          position: { x: 100, y: 70 },
+          position: { x: 10, y: 70 },
           dimension: { width: 100, height: 40 },
           type: 'Addition',
-          label: metadataMap.get('Addition').label,
-          text: '+',
+          label: '+',
           inputs: [
             { types: ['number', 'string'] },
             { types: ['number', 'string'] },
           ],
           outputs: [{ types: ['number'] }],
         },
+        {
+          containerId: 0,
+          id: 5,
+          Component: componentMap.get('Box3D'),
+          position: { x: 450, y: 100 },
+          dimension: { width: 100, height: 40 },
+          label: 'Box3D',
+          type: 'Box3D',
+          inputs: [],
+          outputs: [{ types: ['Node3D'] }],
+        },
+        {
+          containerId: 0,
+          id: 6,
+          Component: componentMap.get('Canvas3D'),
+          position: { x: 450, y: 200 },
+          dimension: { width: 400, height: 400 },
+          type: 'Canvas3D',
+          inputs: [{ types: ['Group3D', 'Node3D'] }],
+          outputs: [],
+        },
       ],
       pipes: [
         {
           containerId: 2,
-          id: 5,
+          id: 21,
           source: [3, 0],
           target: [4, 0],
         },
         {
           containerId: 2,
-          id: 6,
+          id: 22,
           source: [3, 0],
           target: [4, 1],
+        },
+        {
+          containerId: 0,
+          id: 23,
+          source: [5, 0],
+          target: [6, 0],
         },
       ],
     })
