@@ -15,7 +15,6 @@ const PinClass = {
 }
 
 const toId = ({ id }) => id
-const notFlowViewRoot = ({ id }) => id !== rootId
 const isSelected = ({ selected }) => selected
 
 const getNodeById = (nodeId) => (state) =>
@@ -133,23 +132,9 @@ export function flowViewGraphIsValid() {
   return true
 }
 
-export function flowViewGraphTopologyFingerprint({ nodes, pipes }) {
-  const nodesSignature = nodes
-    .filter(notFlowViewRoot)
-    .map(({ containerId, id, type = '' }) => [containerId, id, type].join())
-    .sort()
-
-  const pipesSignature = pipes
-    .map(({ containerId, id, source, target }) =>
-      [containerId, id].concat(source, target).join()
-    )
-    .sort()
-
-  return `nodes=${nodesSignature.join()}&pipes=${pipesSignature.join()}`
-}
-
 export const createFlowViewStore = () =>
   zustand((set, get) => ({
+    iteration: 0,
     nextId: rootId + 1,
     focusedPinTypes: [],
     nodes: [
@@ -164,8 +149,9 @@ export const createFlowViewStore = () =>
       },
     ],
     pipes: [],
-    updateGraph: ({ nodes = [], pipes = [] }) => {
+    updateGraph: ({ next, nodes = [], pipes = [] }) => {
       set((state) => ({
+        iteration: next ? state.iteration + 1 : state.iteration,
         nodes: state.nodes.map(({ id, ...node }) => {
           const updatedNode = nodes.find(({ id: nodeId }) => id === nodeId)
 
@@ -202,7 +188,7 @@ export const createFlowViewStore = () =>
         }),
       }))
     },
-    appendGraph: ({ nodes = [], pipes = [] }) => {
+    appendGraph: ({ next, nodes = [], pipes = [] }) => {
       const graphIsValid = flowViewGraphIsValid({ nodes, pipes })
 
       if (graphIsValid === false) {
@@ -226,6 +212,7 @@ export const createFlowViewStore = () =>
       })
 
       set((state) => ({
+        iteration: next ? state.iteration + 1 : state.iteration,
         nextId,
         nodes: state.nodes.concat(
           nodes.map(({ containerId, id, ...rest }) => ({

@@ -72,6 +72,7 @@ export function Component(props) {
             setIsEditing(false)
 
             updateGraph({
+              next: true,
               nodes: [
                 {
                   id,

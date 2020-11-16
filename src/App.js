@@ -3,11 +3,7 @@ import { animated, useSpring } from 'react-spring'
 import useResizeObserver from 'use-resize-observer'
 
 import { dflowFun } from './dflow'
-import {
-  createFlowViewStore,
-  flowViewGraphTopologyFingerprint,
-  FlowViewNode,
-} from './flow-view'
+import { createFlowViewStore, FlowViewNode } from './flow-view'
 import { Logo } from './components/Logo'
 import { componentMap, taskMap } from './nodes'
 
@@ -31,17 +27,11 @@ export function App() {
     },
   })
 
-  const [graphTopologyFingerprint, setGraphTopologyFingerprint] = useState('')
   const appendGraph = flowViewStore((state) => state.appendGraph)
+  const iteration = flowViewStore((state) => state.iteration)
   const updateGraph = flowViewStore((state) => state.updateGraph)
   const setRootDimension = flowViewStore((state) => state.setRootDimension)
   const setRootPosition = flowViewStore((state) => state.setRootPosition)
-
-  useEffect(() => {
-    flowViewStore.subscribe((state) => {
-      setGraphTopologyFingerprint(flowViewGraphTopologyFingerprint(state))
-    })
-  }, [])
 
   useEffect(() => {
     // TODO remove containers and reduce pipes
@@ -69,10 +59,11 @@ export function App() {
         outputs: output ? [{ ...output, data: outputMap.get(id) }] : [],
       })),
     })
-  }, [graphTopologyFingerprint, updateGraph])
+  }, [iteration, updateGraph])
 
   useEffect(() => {
     appendGraph({
+      next: true,
       nodes: [
         {
           id: 1,
