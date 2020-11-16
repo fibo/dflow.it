@@ -70,7 +70,6 @@ export function App() {
           containerId: 0,
           Component: componentMap.get('Markdown'),
           type: 'Markdown',
-          error: 'Opsss',
           inputs: [
             {
               data: ['# dflow', '> Dataflow programming'],
@@ -118,18 +117,29 @@ export function App() {
         },
         {
           containerId: 0,
-          id: 5,
+          id: 7,
+          Component: componentMap.get('Vector3D'),
+          position: { x: 450, y: 50 },
+          dimension: { width: 100, height: 40 },
+          label: 'Vector3D',
+          type: 'Vector3D',
+          inputs: [],
+          outputs: [],
+        },
+        {
+          containerId: 0,
+          id: 8,
           Component: componentMap.get('Box3D'),
-          position: { x: 450, y: 100 },
+          position: { x: 450, y: 120 },
           dimension: { width: 100, height: 40 },
           label: 'Box3D',
           type: 'Box3D',
-          inputs: [],
+          inputs: [{ types: ['Vector3D'] }],
           outputs: [{ types: ['Node3D'] }],
         },
         {
           containerId: 0,
-          id: 6,
+          id: 9,
           Component: componentMap.get('Canvas3D'),
           position: { x: 450, y: 200 },
           dimension: { width: 400, height: 400 },
@@ -154,8 +164,8 @@ export function App() {
         {
           containerId: 0,
           id: 23,
-          source: [5, 0],
-          target: [6, 0],
+          source: [8, 0],
+          target: [9, 0],
         },
       ],
     })

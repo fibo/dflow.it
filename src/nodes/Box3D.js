@@ -1,15 +1,16 @@
 import { useRef } from 'react'
 import { useFrame } from 'react-three-fiber'
-import { Vector3 } from 'three'
 
+import * as Vector3D from './Vector3D'
 import { FlowViewNodeLabel } from '../flow-view'
 
 export const metadata = {
   type: 'Box3D',
   inputs: [
-    // default: new Vector3(0, 0, 0),
-    // name: 'position'
-    // types: ['Vector3D']
+    {
+      name: 'position',
+      types: ['Vector3D'],
+    },
   ],
   outputs: [
     {
@@ -18,9 +19,7 @@ export const metadata = {
   ],
 }
 
-export function task() {
-  const position = new Vector3(0, 0, 0)
-
+export function task([position = Vector3D.task()]) {
   return function Box3D() {
     const mesh = useRef()
 

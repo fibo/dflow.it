@@ -63,6 +63,26 @@ const getSourcePin = (nodeId, inputIndex) => (state) => {
   }
 }
 
+const getInputsData = (nodeId) => (state) => {
+  if (nodeId === rootId) return []
+
+  const node = getNodeById(nodeId)(state)
+
+  const inputPipes = node.inputs.map((_, inputIndex) =>
+    getInputPipe(nodeId, inputIndex)(state)
+  )
+
+  return inputPipes.map((pipe, inputIndex) => {
+    if (typeof pipe === 'undefined') {
+      return node.inputs[inputIndex].data
+    } else {
+      const sourcePin = getSourcePin(nodeId, inputIndex)(state)
+
+      return sourcePin.data
+    }
+  })
+}
+
 const getDescendantNodeIds = (id) => (state) =>
   getDescendantNodes(id)(state).map(toId)
 
@@ -304,14 +324,14 @@ export const createFlowViewStore = () =>
   }))
 
 export function FlowViewNode({
-  id = rootId,
+  id: nodeId = rootId,
   containerId = rootId,
   label,
   comment,
   useStore,
   error,
 }) {
-  const isRoot = (id === rootId) === containerId
+  const isRoot = nodeId === rootId
 
   const [footbarHeight, setFootbarHeight] = useState(0)
   const [headbarHeight, setHeadbarHeight] = useState(0)
@@ -327,22 +347,23 @@ export function FlowViewNode({
     noHeadbar,
     outputs = [],
     selected,
-  } = useStore(getNodeById(id))
+  } = useStore(getNodeById(nodeId))
 
   const { width, height } = dimension
 
-  const descendantNodeIds = useStore(getDescendantNodeIds(id))
-  const focusedPinNodeId = useStore((state) => state.focusedPinNodeId)
+  const descendantNodeIds = useStore(getDescendantNodeIds(nodeId))
   const focusedPinData = useStore((state) => state.focusedPinData)
+  const focusedPinNodeId = useStore((state) => state.focusedPinNodeId)
   const focusedPinTypes = useStore((state) => state.focusedPinTypes)
-  const someDescendantNodeIsSelected = useStore(
-    getSomeDescendantNodeIsSelected(id)
-  )
-  const isContainer = useStore(getIsContainer(id))
-  const renderBody = useStore(getRenderBody(id))
+  const inputsData = useStore(getInputsData(nodeId))
+  const isContainer = useStore(getIsContainer(nodeId))
+  const renderBody = useStore(getRenderBody(nodeId))
   const selectedNodesIds = useStore(getSelectedNodeIds)
   const setSelectedNodes = useStore((state) => state.setSelectedNodes)
   const setStartDraggingPoint = useStore((state) => state.setStartDraggingPoint)
+  const someDescendantNodeIsSelected = useStore(
+    getSomeDescendantNodeIsSelected(nodeId)
+  )
   const startDraggingPoint = useStore((state) => state.startDraggingPoint)
   const translateNodes = useStore((state) => state.translateNodes)
 
@@ -350,17 +371,17 @@ export function FlowViewNode({
     if (headbarRef.current) {
       const { height } = headbarRef.current.getBoundingClientRect()
 
-      setHeadbarHeight(id, height)
+      setHeadbarHeight(nodeId, height)
     }
-  }, [id, headbarRef, setHeadbarHeight])
+  }, [nodeId, headbarRef, setHeadbarHeight])
 
   useEffect(() => {
     if (footbarRef.current) {
       const { height } = footbarRef.current.getBoundingClientRect()
 
-      setFootbarHeight(id, height)
+      setFootbarHeight(nodeId, height)
     }
-  }, [id, footbarRef, setFootbarHeight])
+  }, [nodeId, footbarRef, setFootbarHeight])
 
   return (
     <>
@@ -382,7 +403,7 @@ export function FlowViewNode({
           } else {
             setSelectedNodes(selectedNodesIds, false)
 
-            setSelectedNodes([id], true)
+            setSelectedNodes([nodeId], true)
           }
         }}
         onMouseMove={(event) => {
@@ -412,8 +433,9 @@ export function FlowViewNode({
             {inputs.map((props, i) => (
               <FlowViewInput
                 key={i}
+                data={inputsData[i]}
                 containerId={containerId}
-                nodeId={id}
+                nodeId={nodeId}
                 index={i}
                 useStore={useStore}
                 {...props}
@@ -445,9 +467,12 @@ export function FlowViewNode({
           }}
         >
           {renderBody({
-            id,
+            id: nodeId,
             containerId,
-            inputs,
+            inputs: inputs.map((pin, inputIndex) => ({
+              ...pin,
+              data: inputsData[inputIndex],
+            })),
             outputs,
             label,
             comment,
@@ -465,7 +490,7 @@ export function FlowViewNode({
               <FlowViewOutput
                 key={i}
                 containerId={containerId}
-                nodeId={id}
+                nodeId={nodeId}
                 index={i}
                 useStore={useStore}
                 {...props}
@@ -474,7 +499,7 @@ export function FlowViewNode({
           </div>
         )}
       </div>
-      {focusedPinNodeId === id && (
+      {focusedPinNodeId === nodeId && (
         <div
           className='flow-view-node__pin-preview'
           style={{
@@ -564,17 +589,7 @@ function FlowViewPin({
 }
 
 function FlowViewInput(props) {
-  const { nodeId, index, useStore } = props
-
-  const sourcePin = useStore(getSourcePin(nodeId, index))
-
-  return (
-    <FlowViewPin
-      pinClass={PinClass.input}
-      {...props}
-      data={sourcePin ? sourcePin.data : props.data}
-    />
-  )
+  return <FlowViewPin pinClass={PinClass.input} {...props} />
 }
 
 function FlowViewOutput(props) {

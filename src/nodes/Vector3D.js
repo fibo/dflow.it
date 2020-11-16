@@ -17,7 +17,7 @@ export const metadata = {
   ],
 }
 
-export function task([x, y, z]) {
+export function task([x, y, z] = []) {
   return new Vector3(x, y, z)
 }
 
