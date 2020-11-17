@@ -96,6 +96,17 @@ const getSomeDescendantNodeIsSelected = (id) => (state) =>
 const getIsContainer = (id) => (state) =>
   id === rootId || getNodeById(id)(state)?.isContainer === true
 
+function pinDataPreview(data) {
+  const dataType = typeof data
+
+  switch (true) {
+    case ['undefined', 'symbol', 'function'].includes(dataType):
+      return dataType
+    default:
+      return String(data)
+  }
+}
+
 function FlowViewContainer({ id, useStore, width, height }) {
   const childrenNodes = useStore(getChildrenNodes(id))
   const childrenPipes = useStore(getChildrenPipes(id))
@@ -512,9 +523,7 @@ export function FlowViewNode({
           </div>
 
           <div className='flow-view-node__pin-preview-data'>
-            {typeof focusedPinData === 'undefined'
-              ? 'undefined'
-              : String(focusedPinData)}
+            {pinDataPreview(focusedPinData)}
           </div>
         </div>
       )}
