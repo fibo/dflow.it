@@ -6,6 +6,7 @@
   "private": true,
   "dependencies": {
     "classnames": "^2.2.6",
+    "flow-view": "github:fibo/flow-view",
     "lint-staged": "^10.4.2",
     "node-sass": "^4.14.1",
     "pre-commit": "^1.2.2",
@@ -32,7 +33,6 @@
     "lint-staged": "lint-staged",
     "start": "react-scripts start",
     "tsc": "tsc",
-    "test:sass-build": "node-sass src/sass/index.scss > /dev/null",
     "test": "react-scripts test --watchAll=false"
   },
   "browserslist": {
@@ -78,8 +78,7 @@
     "*.{json,md}": "prettier --write"
   },
   "pre-commit": [
-    "lint-staged",
-    "test:sass-build"
+    "lint-staged"
   ],
   "prettier": {
     "arrowParens": "always",
@@ -95,7 +94,8 @@
       "stylelint-config-sass-guidelines"
     ],
     "rules": {
-      "max-nesting-depth": null
+      "max-nesting-depth": null,
+      "scss/at-import-partial-extension-blacklist": null
     }
   }
 }
