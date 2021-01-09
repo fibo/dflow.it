@@ -1,8 +1,8 @@
+import { FlowViewNodeLabel } from 'flow-view'
 import { useRef } from 'react'
 import { useFrame } from 'react-three-fiber'
 
 import * as Vector3D from './Vector3D'
-import { FlowViewNodeLabel } from '../flow-view'
 
 export const metadata = {
   type: 'Box3D',

@@ -1,6 +1,5 @@
+import { FlowViewNodeLabel } from 'flow-view'
 import { useEffect, useRef, useState } from 'react'
-
-import { FlowViewNodeLabel } from '../flow-view'
 
 export const metadata = {
   inputs: [

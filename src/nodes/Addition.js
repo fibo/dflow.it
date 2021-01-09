@@ -1,4 +1,4 @@
-import { FlowViewNodeLabel } from '../flow-view'
+import { FlowViewNodeLabel } from 'flow-view'
 
 export const metadata = {
   inputs: [

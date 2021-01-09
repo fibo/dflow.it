@@ -1,6 +1,5 @@
+import { FlowViewNodeLabel } from 'flow-view'
 import { Vector3 } from 'three'
-
-import { FlowViewNodeLabel } from '../flow-view'
 
 export const metadata = {
   inputs: [

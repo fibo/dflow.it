@@ -3,7 +3,7 @@ import { animated, useSpring } from 'react-spring'
 import useResizeObserver from 'use-resize-observer'
 
 import { dflowFun } from './dflow'
-import { createFlowViewStore, FlowViewNode } from './flow-view'
+import { createFlowViewStore, FlowViewNode } from 'flow-view'
 import { Logo } from './components/Logo'
 import { componentMap, taskMap } from './nodes'
 
